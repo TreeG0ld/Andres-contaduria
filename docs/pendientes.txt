@@ -1,0 +1,124 @@
+ESTADO ACTUAL Y LO QUE FALTA - PROCESADOR PILA
+(actualizar este archivo en cada sesion en la que se agregue o resuelva algo)
+
+LO QUE YA EXISTE (FASE 0 + CASCARA VISUAL)
+
+- Docker Compose con "db" (Postgres 16) y "api" (FastAPI, sirve el build de React).
+- Backend arrancando, Alembic conectado a la base (sin modelos todavia).
+- Frontend con navegacion real a las 6 pantallas y diseno visual aplicado.
+- Estructura de carpetas completa segun la arquitectura definida, con cada modulo de negocio como marcador explicito de su fase. Nada de logica real todavia.
+- Un PDF real de SOI guardado en backend/tests/fixtures/soi_muestra_1.pdf, confirmado por inventario (1900x1280, cabeceras de novedades rotadas).
+
+Todo lo demas (extraccion, calculo, revision, exportacion) esta en cero funcionalmente. Lo que sigue es el mapa completo, fase por fase.
+
+FASE 1 - EXTRACCION (CONTRATO CANONICO + PARSER DE SOI)
+Se puede empezar ya, tenemos la muestra real.
+
+- parsers/base.py: las dataclasses del contrato (Aportante, Planilla, Dias, Novedades, LineaCotizante, ResultadoExtraccion) y ParserBase.
+- parsers/coordenadas.py: leer_dias (bandas de caracter) y mapa_novedades (cabeceras rotadas).
+- parsers/descubrimiento.py: script que corre contra un PDF y propone un borrador de perfil.
+- parsers/perfiles/soi.json: perfil calibrado contra la muestra real (bandas de dias, columnas de novedades, anclas de encabezado).
+- parsers/soi.py: parser concreto.
+- Pruebas contra tests/fixtures/soi_muestra_1.pdf, validando tres cosas obligatorias: conteo de cotizantes, totales de aportes, coherencia dias/novedades.
+
+Nada que preguntar aqui, es mecanico, solo falta calibrar contra el PDF real.
+
+FASE 2 - MODELO DE DATOS E IDENTIDAD
+Se puede empezar ya.
+
+- Modelos SQLAlchemy de las 11 tablas: aportantes, trabajadores, vinculos, cargas, lineas_nomina, versiones_formula, formulas, valores_calculados, plantillas, mapeo_plantilla, exportaciones.
+- Primera migracion Alembic real (hoy no hay ninguna).
+- servicios/identidad.py: resolucion de trabajador por (tipo_documento, numero_documento) y asignacion de registro.
+- servicios/vinculos.py: la maquina de estados completa (normal/ingreso/retiro/ingreso_y_retiro cruzado con vinculo abierto/cerrado).
+- Endpoints de api/cargas.py y api/trabajadores.py: subir PDF, listar historial, ficha de trabajador.
+- Guard cronologico: no procesar el periodo N si falta el N-1 del mismo aportante.
+
+Una pregunta pendiente aqui: si el registro se conserva o se reasigna cuando alguien reingresa en enero.
+
+FASE 3 - MOTOR DE CALCULO
+Se puede empezar ya, con formulas marcadoras (no las reales, ver bloqueos abajo).
+
+- calculos/contexto.py: construir el contexto de evaluacion por linea (IBCs, dias, evento, vinculo, periodos historico completo).
+- calculos/evaluador.py: envoltura de simpleeval/asteval con lista blanca, nunca eval().
+- calculos/motor.py: evaluacion en orden ascendente, con el guard de "no referenciar un codigo de orden mayor o igual al propio".
+- Resolucion de salario_referencia (basico de la linea, luego historico con 30 dias, luego derivado del IBC solo si no hay historial).
+- Sembrar formulas con los 19 codigos del catalogo, con expresiones marcadoras evidentes (ej. "MARCADOR_SIN_DEFINIR").
+- Versionado: cargas.version_formula_id congela la version usada.
+
+Bloqueado en el contenido real: las 19 formulas de nomina. El motor y la infraestructura si se construyen ahora; el contenido matematico no se inventa bajo ninguna circunstancia.
+
+FASE 4 - PANTALLA DE REVISION
+Depende de que Fases 2 y 3 tengan datos reales que mostrar.
+
+- api/revision.py: endpoint que entrega los 19 valores por trabajador de una carga.
+- Frontend: tabla editable, totales por concepto, marcado visual de advertencias bloqueantes, persistencia de valor_editado sin tocar valor_original.
+- Reglas de bloqueo: una carga con advertencias sin resolver no puede aprobarse ni exportarse.
+
+FASE 5 - EXPORTACION (ARCHIVO PLANO)
+La infraestructura se puede construir ya, sin conocer la estructura real.
+
+- exportacion/generador.py: soporta desde el dia uno los dos modos, ancho fijo (longitud/relleno/alineacion) y delimitado (separador configurable).
+- exportacion/importador_excel.py: lee un Excel y vuelca el mapeo a mapeo_plantilla (openpyxl).
+- Sembrar una plantilla ficticia con los 19 conceptos en orden, delimitada por punto y coma, para probar el flujo de punta a punta.
+- Pruebas del generador contra la plantilla ficticia (siguen sirviendo cuando llegue la real).
+- api/plantillas.py y api/exportaciones.py.
+
+Bloqueado en el contenido real: la estructura verdadera de los archivos de nomina y DIAN (columnas, formatos, ancho fijo vs delimitado).
+
+FASE 6 - PARSERS DE ENLACE, ARUS Y SIMPLE
+
+- Enlace: hay muestra (842x595), se puede construir su perfil siguiendo el mismo procedimiento.
+- Arus y Simple: bloqueados totalmente, no hay ninguna muestra de PDF todavia.
+
+FASE 7 - RETIRO INDIVIDUAL, CIERRE DE ANO, ARCHIVO DIAN
+
+- servicios/cierre_anual.py: idempotente por estado (liquidado nunca se vuelve a liquidar), y el retiro individual reutiliza exactamente el mismo camino que el cierre de diciembre.
+- Pantalla de revision masiva para el cierre (todos los trabajadores en filas, conceptos en columnas, totales en cabecera).
+
+Bloqueado: ninguna muestra disponible (ni SOI ni Enlace) contiene un retiro marcado. Toda esta rama se construye sin caso real de prueba hasta que llegue uno. Alto riesgo de bugs silenciosos si no se prueba con un PDF real que tenga RET.
+
+FASE 8 - REEMPLAZO DE FORMULAS Y PLANTILLAS REALES
+Trivial en esfuerzo, pero depende 100% de que el equipo entregue el contenido. Cuando lleguen, es solo:
+- Actualizar filas de formulas (nueva version, no se pisa la anterior).
+- Cargar el Excel real por el importador de la Fase 5, cero despliegue de codigo.
+
+LO QUE HACE FALTA QUE ME DEN - NO SE INVENTA NADA DE ESTO
+
+1. Las 19 formulas de nomina.
+   Por que bloquea: implicacion legal/contable directa; una formula plausible pero mal es peor que ninguna.
+   Fase que destraba: 3
+
+2. Reglas de redondeo (decimales, modo).
+   Por que bloquea: toda cifra de dinero pasa por una sola funcion que hoy lanza NotImplementedError a proposito.
+   Fase que destraba: 3, 4, 5
+
+3. Estructura real del archivo de nomina y del DIAN.
+   Por que bloquea: no se sabe si es ancho fijo o delimitado, ni columnas ni formatos.
+   Fase que destraba: 5
+
+4. Como se asigna la clase de gasto (51, 52, 72).
+   Por que bloquea: afecta el mapeo de exportacion, y hoy no viene del PDF.
+   Fase que destraba: 5
+
+5. Muestras de Arus y Simple.
+   Por que bloquea: no hay PDF de referencia para calibrar sus perfiles.
+   Fase que destraba: 6
+
+6. Un PDF con un RET marcado.
+   Por que bloquea: ninguna muestra actual tiene retiros; la rama de liquidacion se construiria sin caso de prueba real.
+   Fase que destraba: 7
+
+7. Si el registro se reasigna al reingresar en enero.
+   Por que bloquea: afecta la identidad persistente del trabajador.
+   Fase que destraba: 2
+
+8. Casos borde no cubiertos por las reglas actuales (IBC en cero, trabajador en dos sucursales, RET sin vinculo previo).
+   Por que bloquea: hoy no hay regla definida para ellos.
+   Fase que destraba: 2, 7
+
+SUGERENCIA DE PRIORIDAD SI VAMOS A SEGUIR CONSTRUYENDO YA
+
+1. Reglas de redondeo, es lo mas barato de confirmar y bloquea todo lo que calcula dinero.
+2. Las 19 formulas, es el corazon del sistema; sin esto la Fase 3 solo tiene marcadores.
+3. Seguir con Fase 1 y 2 (extraccion real de SOI + modelo de datos), que no dependen de nada externo.
+4. Mientras tanto, pedir en paralelo: plantilla real de Excel, muestras de Arus/Simple, y un PDF con un retiro.
