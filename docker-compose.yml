@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: pila
+      POSTGRES_PASSWORD: pila
+      POSTGRES_DB: pila
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+psycopg://pila:pila@db:5432/pila
+    volumes:
+      - ./almacen:/almacen
+      - ./backend/app:/repo/backend/app
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:
