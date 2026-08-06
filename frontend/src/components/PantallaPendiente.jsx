@@ -1,8 +1,34 @@
+import { useRef } from "react";
+import { gsap } from "gsap";
+import { useGSAP } from "@gsap/react";
 import "./PantallaPendiente.css";
 
-export default function PantallaPendiente({ titulo, descripcion, fase, children }) {
+gsap.registerPlugin(useGSAP);
+
+export default function PantallaPendiente({ titulo, descripcion, fase, children, centrado = false }) {
+  const ref = useRef(null);
+
+  // Entrada "Standard" (data/motion.csv, Stagger List): cabecera y bloque
+  // de contenido aparecen con un desfase corto, no de golpe.
+  useGSAP(
+    () => {
+      gsap.from(".pantalla__cabecera, .pantalla__vacio, .carga", {
+        opacity: 0,
+        y: 12,
+        duration: 0.35,
+        stagger: 0.06,
+        ease: "power1.out",
+      });
+    },
+    { scope: ref }
+  );
+
   return (
-    <div className="pantalla">
+    <div
+      className="pantalla"
+      ref={ref}
+      style={centrado ? { maxWidth: 480, width: "100%", margin: "0 auto" } : undefined}
+    >
       <header className="pantalla__cabecera">
         <div>
           <h1>{titulo}</h1>
