@@ -1,0 +1,17 @@
+# Entornos y artefactos de Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Artefactos de node/npm (si se usa un build de Tailwind a futuro)
+node_modules/
+
+# Carpetas de trabajo temporales (servidor local, navegador headless, logs)
+.run-tmp/
+.pip-tmp/
+.pip-cache/
+
+# Editor / OS
+.vscode/
+.DS_Store
