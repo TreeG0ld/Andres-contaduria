@@ -1,0 +1,48 @@
+.pantalla {
+  max-width: 860px;
+}
+
+.pantalla__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.pantalla__cabecera h1 {
+  font-size: 22px;
+}
+
+.pantalla__descripcion {
+  color: var(--texto-tenue);
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+.pantalla__fase {
+  flex-shrink: 0;
+  background: var(--acento-suave);
+  color: var(--acento);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pantalla__vacio {
+  background: var(--bg-elevada);
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio);
+  padding: 28px;
+  color: var(--texto-tenue);
+  font-size: 13.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pantalla__vacio-nota {
+  font-size: 12.5px;
+  color: #98a2b3;
+}

@@ -1,0 +1,66 @@
+.carga {
+  display: grid;
+  gap: 16px;
+  max-width: 420px;
+}
+
+.carga__dropzone {
+  border: 1.5px dashed var(--borde);
+  border-radius: var(--radio);
+  background: var(--bg-elevada);
+  padding: 36px 24px;
+  text-align: center;
+  color: var(--texto-tenue);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: not-allowed;
+}
+
+.carga__dropzone svg {
+  width: 26px;
+  height: 26px;
+  color: var(--acento);
+}
+
+.carga__dropzone p {
+  font-size: 13.5px;
+  color: var(--texto);
+}
+
+.carga__nota {
+  font-size: 12px;
+  color: #98a2b3;
+}
+
+.carga__operador {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.carga__operador label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--texto-tenue);
+}
+
+.carga__operador select,
+.carga__operador button {
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  font-size: 13.5px;
+  background: var(--bg-elevada);
+  color: var(--texto);
+}
+
+.carga__operador button {
+  background: var(--acento);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  cursor: not-allowed;
+  opacity: 0.6;
+}

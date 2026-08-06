@@ -1,23 +1,25 @@
-import { useEffect, useState } from "react";
-import { obtenerSalud } from "./api/cliente";
-import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout";
+import PantallaCarga from "./features/carga/PantallaCarga";
+import PantallaHistorial from "./features/historial/PantallaHistorial";
+import PantallaRevision from "./features/revision/PantallaRevision";
+import PantallaFormulas from "./features/formulas/PantallaFormulas";
+import PantallaPlantillas from "./features/plantillas/PantallaPlantillas";
+import PantallaTrabajadores from "./features/trabajadores/PantallaTrabajadores";
 
-function App() {
-  const [estadoApi, setEstadoApi] = useState("verificando...");
-
-  useEffect(() => {
-    obtenerSalud()
-      .then((datos) => setEstadoApi(datos.estado))
-      .catch(() => setEstadoApi("sin conexión con la API"));
-  }, []);
-
+export default function App() {
   return (
-    <main className="app">
-      <h1>PILA</h1>
-      <p>Procesador de planillas y generador de archivos planos.</p>
-      <p>Estado de la API: {estadoApi}</p>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<PantallaCarga />} />
+          <Route path="historial" element={<PantallaHistorial />} />
+          <Route path="revision" element={<PantallaRevision />} />
+          <Route path="formulas" element={<PantallaFormulas />} />
+          <Route path="plantillas" element={<PantallaPlantillas />} />
+          <Route path="trabajadores" element={<PantallaTrabajadores />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
