@@ -4,68 +4,48 @@
 }
 
 .sidebar {
-  width: 240px;
+  width: 248px;
   flex-shrink: 0;
   background: var(--sidebar-bg);
   color: var(--sidebar-texto);
   display: flex;
   flex-direction: column;
   padding: 20px 14px;
+  border-right: 1px solid var(--sidebar-borde);
 }
 
 .sidebar__marca {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 10px 20px;
+  padding: 4px 10px 22px;
   color: var(--sidebar-texto-activo);
+}
+
+.sidebar__marca strong {
+  font-family: var(--fuente-marca);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .sidebar__logo {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: var(--acento);
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radio-sm);
+  background: var(--sidebar-texto-activo);
+  color: var(--sidebar-bg);
+  font-family: var(--fuente-marca);
+  font-weight: 800;
+  font-size: 16px;
 }
 
 .sidebar__submarca {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--sidebar-texto);
   font-weight: 400;
-}
-
-.sidebar__nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-}
-
-.sidebar__item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  border-radius: 8px;
-  color: var(--sidebar-texto);
-  text-decoration: none;
-  font-size: 13.5px;
-  transition: background 0.12s, color 0.12s;
-}
-
-.sidebar__item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--sidebar-texto-activo);
-}
-
-.sidebar__item.es-activo {
-  background: var(--acento);
-  color: #fff;
 }
 
 .sidebar__pie {
@@ -77,34 +57,13 @@
 .estado-api {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 12px;
   color: var(--sidebar-texto);
 }
 
-.estado-api__punto {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--texto-tenue);
-}
-
-.estado-api__punto.es-cargando {
-  background: #d0d5dd;
-  animation: pulso 1.2s infinite ease-in-out;
-}
-
-.estado-api__punto.es-ok {
-  background: #22c55e;
-}
-
-.estado-api__punto.es-error {
-  background: #ef4444;
-}
-
-@keyframes pulso {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+.estado-api canvas {
+  flex-shrink: 0;
 }
 
 .contenido {
@@ -122,6 +81,8 @@
     flex-direction: row;
     align-items: center;
     overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--sidebar-borde);
   }
   .sidebar__marca,
   .sidebar__pie {

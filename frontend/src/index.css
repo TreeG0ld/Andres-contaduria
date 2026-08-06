@@ -1,25 +1,45 @@
 :root {
-  --bg: #f6f7f9;
+  /* Superficie — escala neutra (zinc), sin color de marca en el chrome */
+  --bg: #fafafa;
   --bg-elevada: #ffffff;
-  --texto: #1e2430;
-  --texto-tenue: #667085;
-  --borde: #e3e6eb;
-  --acento: #2f5fdb;
-  --acento-suave: #eaf0fd;
-  --exito: #15803d;
-  --exito-suave: #e9f7ef;
-  --advertencia: #b45309;
-  --advertencia-suave: #fef3e2;
+  --bg-hover: #f4f4f5;
+  --texto: #18181b;
+  --texto-tenue: #71717a;
+  --texto-sutil: #a1a1aa;
+  --borde: #e4e4e7;
+  --borde-fuerte: #d4d4d8;
 
-  --sidebar-bg: #151a24;
-  --sidebar-texto: #a9b2c3;
+  /* "Acento" = negro/gris oscuro: reemplaza el azul de marca por tinta neutra */
+  --acento: #18181b;
+  --acento-hover: #27272a;
+  --acento-suave: #f4f4f5;
+  --on-acento: #ffffff;
+
+  /* Color funcional — se conserva por accesibilidad (el color nunca es la única señal,
+     siempre va acompañado de texto/ícono), pero desaturado para que no rompa lo sobrio */
+  --exito: #15803d;
+  --exito-suave: #f0f5f1;
+  --advertencia: #b45309;
+  --advertencia-suave: #f6f1e9;
+  --peligro: #b91c1c;
+  --peligro-suave: #f6efee;
+
+  /* Sidebar: negro real, no navy */
+  --sidebar-bg: #0a0a0b;
+  --sidebar-bg-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-texto: #a1a1aa;
   --sidebar-texto-activo: #ffffff;
-  --sidebar-borde: #262d3a;
+  --sidebar-borde: #232326;
 
   --radio: 10px;
-  --sombra: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+  --radio-sm: 8px;
+  --sombra: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.07);
+  --sombra-md: 0 8px 24px rgba(0, 0, 0, 0.1);
 
-  font: 15px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
+  --fuente-marca: "Poppins", "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  --fuente-cuerpo: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+
+  font: 15px/1.55 var(--fuente-cuerpo);
   color: var(--texto);
   background: var(--bg);
   font-synthesis: none;
@@ -43,8 +63,9 @@ body {
 h1,
 h2,
 h3 {
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--fuente-marca);
+  font-weight: 700;
+  letter-spacing: -0.005em;
   margin: 0;
 }
 
@@ -54,4 +75,30 @@ p {
 
 button {
   font: inherit;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Foco visible y consistente con la paleta, nunca eliminado */
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+  border-radius: var(--radio-sm);
+}
+
+.sidebar :focus-visible {
+  outline-color: var(--sidebar-texto-activo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

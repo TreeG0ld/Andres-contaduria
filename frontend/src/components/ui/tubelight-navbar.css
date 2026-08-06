@@ -1,0 +1,72 @@
+.tubelight-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.tubelight-nav__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 44px;
+  padding: 9px 12px;
+  border-radius: var(--radio-sm);
+  color: var(--sidebar-texto);
+  text-decoration: none;
+  font-size: 13.5px;
+  overflow: hidden;
+  transition: color 0.15s;
+}
+
+.tubelight-nav__item:hover,
+.tubelight-nav__item.es-activo {
+  color: var(--sidebar-texto-activo);
+}
+
+.tubelight-nav__icono,
+.tubelight-nav__etiqueta {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+}
+
+/* Panel que desliza de un ítem a otro (motion layoutId) */
+.tubelight-nav__lampara {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--radio-sm);
+  background: var(--sidebar-bg-hover);
+}
+
+/* Tubo luminoso pegado al borde izquierdo del ítem activo */
+.tubelight-nav__tubo {
+  position: absolute;
+  left: -1px;
+  top: 50%;
+  translate: 0 -50%;
+  width: 3px;
+  height: 60%;
+  border-radius: 999px;
+  background: var(--sidebar-texto-activo);
+}
+
+.tubelight-nav__halo {
+  position: absolute;
+  left: -11px;
+  top: 50%;
+  translate: 0 -50%;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  filter: blur(11px);
+}
+
+@media (max-width: 720px) {
+  .tubelight-nav {
+    flex-direction: row;
+  }
+}

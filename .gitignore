@@ -16,6 +16,11 @@ node_modules/
 .vscode/
 .DS_Store
 
+# Skills de Claude Code instaladas localmente (herramientas, no código del proyecto)
+.claude/
+.agents/
+skills-lock.json
+
 # Build de frontend
 frontend/dist/
 
