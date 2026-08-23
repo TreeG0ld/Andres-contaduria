@@ -7,9 +7,13 @@ from fastapi.staticfiles import StaticFiles
 app = FastAPI(title="PILA")
 
 
+from app.api.cargas import router as cargas_router
+
 @app.get("/api/salud")
 def salud():
     return {"estado": "ok"}
+
+app.include_router(cargas_router, prefix="/api/cargas", tags=["cargas"])
 
 
 frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
