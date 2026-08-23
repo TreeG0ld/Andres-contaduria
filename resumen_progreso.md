@@ -27,11 +27,14 @@ Este documento contiene un resumen detallado de lo que se ha implementado, lo qu
 
 ## 2. Lo que falta por implementar (Siguientes Pasos)
 
+* **Scripts de Extracción para Otros Operadores (ARUS y SIMPLE):**
+  * Desarrollar los parsers de PDF correspondientes para extraer la información de las planillas PILA emitidas por los operadores ARUS y SIMPLE (actualmente solo está implementado el de SOI).
 * **Desarrollo del Frontend (Pantallas Pendientes):**
   * **Pantalla de Revisión:** Crear la tabla interactiva que permita ver y modificar los cálculos por empleado antes de descargar el Excel final.
   * **Pantalla de Historial:** Mostrar las cargas pasadas con enlaces de descarga directa de los archivos previamente generados.
   * **Pantalla de Fórmulas:** Permitir que el contador edite las fórmulas matemáticas del sistema directamente desde la interfaz.
   * **Pantalla de Trabajadores:** Mostrar la lista de empleados y asociar su área o clase de gasto (administrativos `51`, operativos `52`, producción `72`).
+
 * **Cálculo Automático de Novedades de Ingreso y Retiro:**
   * Crear el vínculo del cotizante si se detecta `nov_ing = True` en la planilla.
   * Si se detecta `nov_ret = True`, establecer la fecha de retiro en la tabla `vinculos` y marcar el estado como `"liquidado"`.
