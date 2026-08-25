@@ -7,11 +7,15 @@ export default function PantallaCarga() {
   const [resultado, setResultado] = useState(null);
 
   // States for NITs wizard
-  const [nitArl, setNitArl] = useState('');
   const [nitCcf, setNitCcf] = useState('');
   const [nitAfp, setNitAfp] = useState('');
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [mensajeExito, setMensajeExito] = useState(null);
+
+  // States for worker classifications
+  const [trabajadoresUnclassified, setTrabajadoresUnclassified] = useState([]);
+  const [classifications, setClassifications] = useState({});
+  const [classLoading, setClassLoading] = useState(false);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -40,6 +44,11 @@ export default function PantallaCarga() {
       const data = await response.json();
       setResultado(data);
 
+      if (data.status === 'needs_config' && data.aportante) {
+        setNitCcf(data.aportante.nit_ccf || '');
+        setNitAfp(data.aportante.nit_afp || '');
+      }
+
       // Auto trigger download if success
       if (data.status === 'success' && data.ruta_descarga) {
         window.open(data.ruta_descarga, '_blank');
@@ -64,25 +73,62 @@ export default function PantallaCarga() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          nit_arl: nitArl,
           nit_ccf: nitCcf,
           nit_afp: nitAfp,
         }),
       });
 
       const data = await response.json();
-      if (data.status === 'success') {
-        setMensajeExito("¡NITs guardados y planilla procesada correctamente!");
-        // Trigger Excel download
+      if (data.status === 'needs_workers_classification') {
+        setTrabajadoresUnclassified(data.trabajadores);
+        const initialMap = {};
+        data.trabajadores.forEach(t => {
+          initialMap[t.id] = "51";
+        });
+        setClassifications(initialMap);
+      } else if (data.status === 'success') {
+        setMensajeExito("planilla procesada correctamente");
         window.open(data.ruta_descarga, '_blank');
       } else {
-        setResultado({ error: data.error || "Ocurrió un error al guardar los NITs" });
+        setResultado({ error: data.error || "Ocurrio un error al guardar los nit" });
       }
     } catch (error) {
-      console.error("Error al confirmar NITs:", error);
+      console.error("Error al confirmar nit:", error);
       setResultado({ error: "Error de conexión con el servidor" });
     } finally {
       setConfirmLoading(false);
+    }
+  };
+
+  const handleClasificarTrabajadores = async (e) => {
+    e.preventDefault();
+    if (!resultado || !resultado.carga_id) return;
+
+    setClassLoading(true);
+    try {
+      const response = await fetch(`/api/cargas/${resultado.carga_id}/clasificar_trabajadores`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clasificaciones: classifications,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.status === 'success') {
+        setMensajeExito("¡Trabajadores clasificados y Excel generado correctamente!");
+        setTrabajadoresUnclassified([]);
+        window.open(data.ruta_descarga, '_blank');
+      } else {
+        setResultado({ error: data.error || "Ocurrió un error al clasificar trabajadores" });
+      }
+    } catch (error) {
+      console.error("Error al clasificar trabajadores:", error);
+      setResultado({ error: "Error de conexión con el servidor" });
+    } finally {
+      setClassLoading(false);
     }
   };
 
@@ -184,7 +230,7 @@ export default function PantallaCarga() {
         </form>
 
         {/* Mago de configuración de NITs si la empresa no los tiene */}
-        {resultado && resultado.status === 'needs_config' && !mensajeExito && (
+        {resultado && resultado.status === 'needs_config' && trabajadoresUnclassified.length === 0 && !mensajeExito && (
           <div style={{
             marginTop: "2.5rem",
             padding: "2rem",
@@ -192,23 +238,14 @@ export default function PantallaCarga() {
             backgroundColor: "#EFF6FF",
             border: "1px solid #BFDBFE"
           }}>
-            <h3 style={{ marginTop: 0, color: "#1E40AF", fontSize: "16px", fontWeight: "700" }}>
-              ⚠️ Empresa no configurada
-            </h3>
-            <p style={{ color: "#1E3A8A", fontSize: "14px", marginBottom: "1.5rem" }}>
-              Se detectó el aportante <strong>{resultado.aportante.razon_social}</strong> (NIT {resultado.aportante.numero_documento}), pero no tiene asignado los NITs de sus entidades para los créditos patronales en el archivo contable.
-              <br /><br />
-              Ingresa los NITs correspondientes a continuación. El sistema los guardará para este y futuros meses.
-            </p>
-
             <form onSubmit={handleConfirmarNits} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                <label style={{ fontSize: "13px", fontWeight: "600", color: "#1E3A8A" }}>NIT de la ARL:</label>
+                <label style={{ fontSize: "13px", fontWeight: "600", color: "#1E3A8A" }}>NIT de la Administradora de Pensiones (AFP):</label>
                 <input
                   type="text"
-                  value={nitArl}
-                  onChange={(e) => setNitArl(e.target.value)}
-                  placeholder="Ej: 890903790"
+                  value={nitAfp}
+                  onChange={(e) => setNitAfp(e.target.value)}
+                  placeholder="Ej: 900336004"
                   style={{ padding: "0.6rem", border: "1px solid #93C5FD", borderRadius: "6px", fontSize: "14px" }}
                   required
                 />
@@ -220,17 +257,6 @@ export default function PantallaCarga() {
                   value={nitCcf}
                   onChange={(e) => setNitCcf(e.target.value)}
                   placeholder="Ej: 890900841"
-                  style={{ padding: "0.6rem", border: "1px solid #93C5FD", borderRadius: "6px", fontSize: "14px" }}
-                  required
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                <label style={{ fontSize: "13px", fontWeight: "600", color: "#1E3A8A" }}>NIT de la Administradora de Pensiones (AFP):</label>
-                <input
-                  type="text"
-                  value={nitAfp}
-                  onChange={(e) => setNitAfp(e.target.value)}
-                  placeholder="Ej: 901465677"
                   style={{ padding: "0.6rem", border: "1px solid #93C5FD", borderRadius: "6px", fontSize: "14px" }}
                   required
                 />
@@ -251,6 +277,74 @@ export default function PantallaCarga() {
                 }}
               >
                 {confirmLoading ? "Guardando y Generando..." : "Confirmar y Descargar Excel"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Clasificación interactiva de trabajadores (51/52/72) */}
+        {resultado && resultado.status === 'needs_config' && trabajadoresUnclassified.length > 0 && !mensajeExito && (
+          <div style={{
+            marginTop: "2.5rem",
+            padding: "2rem",
+            borderRadius: "12px",
+            backgroundColor: "#F0FDF4",
+            border: "1px solid #BBF7D0"
+          }}>
+            <h4 style={{ marginTop: 0, color: "#166534", fontSize: "15px", fontWeight: "700" }}>
+              Clasificación de Clase de Gasto para Nuevos Trabajadores
+            </h4>
+            <p style={{ color: "#14532D", fontSize: "13px", marginBottom: "1rem" }}>
+              Asigna a cada empleado su correspondiente código contable de gasto (51 = Administración, 52 = Ventas, 72 = Producción).
+            </p>
+            <form onSubmit={handleClasificarTrabajadores} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div style={{ maxHeight: "250px", overflowY: "auto", border: "1px solid #D1D5DB", borderRadius: "6px", backgroundColor: "white" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                  <thead>
+                    <tr style={{ backgroundColor: "#F3F4F6", borderBottom: "1px solid #E5E7EB", textAlign: "left" }}>
+                      <th style={{ padding: "0.5rem" }}>Trabajador</th>
+                      <th style={{ padding: "0.5rem" }}>Cédula</th>
+                      <th style={{ padding: "0.5rem" }}>Clase Gasto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trabajadoresUnclassified.map((t) => (
+                      <tr key={t.id} style={{ borderBottom: "1px solid #F3F4F6" }}>
+                        <td style={{ padding: "0.5rem" }}>{t.nombre_completo}</td>
+                        <td style={{ padding: "0.5rem" }}>{t.numero_documento}</td>
+                        <td style={{ padding: "0.5rem" }}>
+                          <select
+                            value={classifications[t.id] || "51"}
+                            onChange={(e) => setClassifications({
+                              ...classifications,
+                              [t.id]: e.target.value
+                            })}
+                            style={{ padding: "0.3rem", borderRadius: "4px", border: "1px solid #D1D5DB" }}
+                          >
+                            <option value="51">51 - Administración</option>
+                            <option value="52">52 - Ventas</option>
+                            <option value="72">72 - Producción</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button
+                type="submit"
+                disabled={classLoading}
+                style={{
+                  padding: "0.8rem",
+                  backgroundColor: "#166534",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontWeight: "600",
+                  cursor: classLoading ? "not-allowed" : "pointer"
+                }}
+              >
+                {classLoading ? "Guardando y Generando..." : "Guardar y Descargar Excel"}
               </button>
             </form>
           </div>

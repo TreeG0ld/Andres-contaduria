@@ -57,9 +57,12 @@ def exportar_nomina(db: Session, carga_id: int, period: date, mapeos: list[Mapeo
         worker_doc = trabajador.numero_documento if trabajador else ""
         clase_gasto = trabajador.clase_gasto if (trabajador and trabajador.clase_gasto) else "51"
         
-        # Cargar valores calculados
+        # Cargar valores calculados (respetar la edición manual si existe)
         valores = db.query(ValorCalculado).filter(ValorCalculado.linea_id == linea.id).all()
-        vals_dict = {v.codigo: float(v.valor_original) for v in valores}
+        vals_dict = {
+            v.codigo: float(v.valor_editado if v.valor_editado is not None else v.valor_original)
+            for v in valores
+        }
         
         for map_row in mapeos_ordenados:
             concept = map_row.codigo_calculo
@@ -83,16 +86,17 @@ def exportar_nomina(db: Session, carga_id: int, period: date, mapeos: list[Mapeo
                 if concept == "aporte_pension":
                     third_party = aportante.nit_afp or ""
                 elif concept == "aporte_arl":
-                    third_party = aportante.nit_arl or ""
+                    third_party = aportante.numero_documento or ""  # El NIT de la ARL es el del Aportante (siempre está en la planilla)
                 elif concept == "aporte_ccf":
                     third_party = aportante.nit_ccf or ""
 
 
 
                 
-            # Débito vs Crédito
-            debito_val = amount if side == "debito" else 0.0
-            credito_val = amount if side == "credito" else 0.0
+            # Débito vs Crédito (truncados a enteros para eliminar decimales)
+            amount_int = int(amount) if amount else 0
+            debito_val = amount_int if side == "debito" else 0
+            credito_val = amount_int if side == "credito" else 0
             
             # Estructurar fila (27 columnas)
             row_data = [""] * 27

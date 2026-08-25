@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Form, Depends
 from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.parsers.soi import SOIParser
+from app.parsers.arus import ARUSParser
 from app.models.base import Aportante, Trabajador, Vinculo
 from app.models.nomina import Carga, LineaNomina, ValorCalculado
 from datetime import date
@@ -26,6 +27,8 @@ async def cargar_pdf(
         # 1. Extraccion
         if operador == "soi":
             parser = SOIParser()
+        elif operador == "arus":
+            parser = ARUSParser()
         else:
             return {"error": f"Operador {operador} no implementado aun"}
             
@@ -96,7 +99,7 @@ async def cargar_pdf(
                     numero_documento=line.numero_documento,
                     registro=line.numero_documento,
                     nombre_completo=line.nombre_completo,
-                    clase_gasto="51"  # Por defecto administracion
+                    clase_gasto=None  # Sin clasificar por defecto
                 )
                 db.add(trabajador)
                 db.flush()
@@ -190,75 +193,20 @@ async def cargar_pdf(
             carga.version_formula_id = active_version.id
             db.commit()
         
-        # 4. Generar Excel (Solo si la empresa tiene los NITs configurados)
-        nits_faltantes = not (aportante.nit_arl and aportante.nit_ccf and aportante.nit_afp)
-        if nits_faltantes:
-            carga.estado = "requiere_config"
-            db.commit()
-            return {
-                "status": "needs_config",
-                "carga_id": carga.id,
-                "aportante": {
-                    "id": aportante.id,
-                    "razon_social": aportante.razon_social,
-                    "numero_documento": aportante.numero_documento
-                }
-            }
-            
-        # Si tiene los NITs, generar el Excel automáticamente
-        from app.models.config import Plantilla, MapeoPlantilla, Exportacion
-        from app.exportacion.generador import exportar_nomina
-        from app.core.config import settings
-        from pathlib import Path
-        
-        plantilla = db.query(Plantilla).filter(Plantilla.nombre == "Archivo Plano Nómina").first()
-        if plantilla:
-            mapeos = db.query(MapeoPlantilla).filter(MapeoPlantilla.plantilla_id == plantilla.id).all()
-            if mapeos:
-                # Generar archivo xlsx
-                temp_xlsx_path = exportar_nomina(db, carga.id, periodo, mapeos)
-                
-                # Guardar en almacen
-                almacen_path = Path(settings.almacen_dir) / "exportaciones"
-                almacen_path.mkdir(parents=True, exist_ok=True)
-                dest_file = almacen_path / f"nomina_carga_{carga.id}.xlsx"
-                
-                if os.path.exists(temp_xlsx_path):
-                    shutil.copy(temp_xlsx_path, dest_file)
-                    try:
-                        os.remove(temp_xlsx_path)
-                    except:
-                        pass
-                    
-                # Registrar exportación
-                exportacion = db.query(Exportacion).filter(
-                    Exportacion.carga_id == carga.id,
-                    Exportacion.plantilla_id == plantilla.id
-                ).first()
-                
-                if exportacion:
-                    exportacion.ruta_archivo = str(dest_file)
-                    exportacion.generado_at = date.today()
-                else:
-                    exportacion = Exportacion(
-                        carga_id=carga.id,
-                        plantilla_id=plantilla.id,
-                        ruta_archivo=str(dest_file),
-                        hash_archivo=f"hash_{carga.id}",
-                        generado_at=date.today()
-                    )
-                    db.add(exportacion)
-                
-                carga.estado = "procesada"
-                db.commit()
-        
+        # 4. Siempre requerir confirmación de los NITs del aportante para evitar datos inventados
+        carga.estado = "requiere_config"
+        db.commit()
         return {
-            "status": "success",
-            "mensaje": "Carga exitosa y Excel generado",
+            "status": "needs_config",
             "carga_id": carga.id,
-            "empleados_extraidos": len(extraccion.lineas),
-            "advertencias": extraccion.advertencias,
-            "ruta_descarga": f"/api/cargas/descargar/{carga.id}"
+            "aportante": {
+                "id": aportante.id,
+                "razon_social": aportante.razon_social,
+                "numero_documento": aportante.numero_documento,
+                "nit_arl": aportante.nit_arl or "",
+                "nit_ccf": aportante.nit_ccf or "",
+                "nit_afp": aportante.nit_afp or ""
+            }
         }
     except Exception as e:
         db.rollback()
@@ -271,9 +219,62 @@ async def cargar_pdf(
 from pydantic import BaseModel
 
 class ConfirmarNitsRequest(BaseModel):
-    nit_arl: str
     nit_ccf: str
     nit_afp: str
+
+class ClasificarTrabajadoresRequest(BaseModel):
+    clasificaciones: dict[int, str]
+
+def _generar_excel_carga(db: Session, carga):
+    from app.models.config import Plantilla, MapeoPlantilla, Exportacion
+    from app.exportacion.generador import exportar_nomina
+    from app.core.config import settings
+    from pathlib import Path
+    import shutil
+    import os
+    from datetime import date
+    
+    plantilla = db.query(Plantilla).filter(Plantilla.nombre == "Archivo Plano Nómina").first()
+    if not plantilla:
+        return
+        
+    mapeos = db.query(MapeoPlantilla).filter(MapeoPlantilla.plantilla_id == plantilla.id).all()
+    if not mapeos:
+        return
+        
+    temp_xlsx_path = exportar_nomina(db, carga.id, carga.periodo, mapeos)
+    
+    almacen_path = Path(settings.almacen_dir) / "exportaciones"
+    almacen_path.mkdir(parents=True, exist_ok=True)
+    dest_file = almacen_path / f"nomina_carga_{carga.id}.xlsx"
+    
+    if os.path.exists(temp_xlsx_path):
+        shutil.copy(temp_xlsx_path, dest_file)
+        try:
+            os.remove(temp_xlsx_path)
+        except:
+            pass
+            
+    exportacion = db.query(Exportacion).filter(
+        Exportacion.carga_id == carga.id,
+        Exportacion.plantilla_id == plantilla.id
+    ).first()
+    
+    if exportacion:
+        exportacion.ruta_archivo = str(dest_file)
+        exportacion.generado_at = date.today()
+    else:
+        exportacion = Exportacion(
+            carga_id=carga.id,
+            plantilla_id=plantilla.id,
+            ruta_archivo=str(dest_file),
+            hash_archivo=f"hash_{carga.id}",
+            generado_at=date.today()
+        )
+        db.add(exportacion)
+    
+    carga.estado = "procesada"
+    db.commit()
 
 @router.post("/{carga_id}/confirmar_nits")
 async def confirmar_nits(
@@ -281,13 +282,8 @@ async def confirmar_nits(
     req: ConfirmarNitsRequest,
     db: Session = Depends(get_db)
 ):
-    from app.models.nomina import Carga
-    from app.models.base import Aportante
-    from app.models.config import Plantilla, MapeoPlantilla, Exportacion
-
-    from app.exportacion.generador import exportar_nomina
-    from app.core.config import settings
-    from pathlib import Path
+    from app.models.nomina import Carga, LineaNomina
+    from app.models.base import Aportante, Trabajador, Vinculo
     
     carga = db.query(Carga).filter(Carga.id == carga_id).first()
     if not carga:
@@ -298,53 +294,71 @@ async def confirmar_nits(
         return {"error": "Aportante no encontrado"}
         
     # Guardar los NITs en el perfil de la empresa
-    aportante.nit_arl = req.nit_arl
     aportante.nit_ccf = req.nit_ccf
     aportante.nit_afp = req.nit_afp
     db.commit()
     
-    # Generar el Excel
-    plantilla = db.query(Plantilla).filter(Plantilla.nombre == "Archivo Plano Nómina").first()
-    if plantilla:
-        mapeos = db.query(MapeoPlantilla).filter(MapeoPlantilla.plantilla_id == plantilla.id).all()
-        if mapeos:
-            temp_xlsx_path = exportar_nomina(db, carga.id, carga.periodo, mapeos)
-            
-            almacen_path = Path(settings.almacen_dir) / "exportaciones"
-            almacen_path.mkdir(parents=True, exist_ok=True)
-            dest_file = almacen_path / f"nomina_carga_{carga.id}.xlsx"
-            
-            if os.path.exists(temp_xlsx_path):
-                shutil.copy(temp_xlsx_path, dest_file)
-                try:
-                    os.remove(temp_xlsx_path)
-                except:
-                    pass
-                
-            exportacion = db.query(Exportacion).filter(
-                Exportacion.carga_id == carga.id,
-                Exportacion.plantilla_id == plantilla.id
-            ).first()
-            
-            if exportacion:
-                exportacion.ruta_archivo = str(dest_file)
-                exportacion.generado_at = date.today()
-            else:
-                exportacion = Exportacion(
-                    carga_id=carga.id,
-                    plantilla_id=plantilla.id,
-                    ruta_archivo=str(dest_file),
-                    hash_archivo=f"hash_{carga.id}",
-                    generado_at=date.today()
-                )
-                db.add(exportacion)
-            
-            carga.estado = "procesada"
-            db.commit()
-            
+    # Validar si hay trabajadores sin clasificar en esta carga
+    unclassified_workers = db.query(Trabajador).join(
+        Vinculo, Vinculo.trabajador_id == Trabajador.id
+    ).join(
+        LineaNomina, LineaNomina.vinculo_id == Vinculo.id
+    ).filter(
+        LineaNomina.carga_id == carga.id,
+        (Trabajador.clase_gasto.is_(None)) | (~Trabajador.clase_gasto.in_(["51", "52", "72"]))
+    ).distinct().all()
+    
+    if unclassified_workers:
+        return {
+            "status": "needs_workers_classification",
+            "carga_id": carga.id,
+            "trabajadores": [
+                {
+                    "id": t.id,
+                    "nombre_completo": t.nombre_completo,
+                    "numero_documento": t.numero_documento
+                }
+                for t in unclassified_workers
+            ]
+        }
+        
+    # Si todos están clasificados, generar Excel
+    _generar_excel_carga(db, carga)
+    
     return {
         "status": "success",
         "mensaje": "NITs configurados y Excel generado con éxito",
+        "carga_id": carga.id,
+        "ruta_descarga": f"/api/cargas/descargar/{carga.id}"
+    }
+
+@router.post("/{carga_id}/clasificar_trabajadores")
+async def clasificar_trabajadores(
+    carga_id: int,
+    req: ClasificarTrabajadoresRequest,
+    db: Session = Depends(get_db)
+):
+    from app.models.nomina import Carga
+    from app.models.base import Trabajador
+    
+    carga = db.query(Carga).filter(Carga.id == carga_id).first()
+    if not carga:
+        return {"error": "Carga no encontrada"}
+        
+    # Guardar las clasificaciones recibidas
+    for t_id, clase in req.clasificaciones.items():
+        if clase in ["51", "52", "72"]:
+            trabajador = db.query(Trabajador).filter(Trabajador.id == t_id).first()
+            if trabajador:
+                trabajador.clase_gasto = clase
+    db.commit()
+    
+    # Generar el Excel
+    _generar_excel_carga(db, carga)
+    
+    return {
+        "status": "success",
+        "mensaje": "Trabajadores clasificados y Excel generado con éxito",
         "carga_id": carga.id,
         "ruta_descarga": f"/api/cargas/descargar/{carga.id}"
     }
@@ -371,6 +385,29 @@ async def descargar_excel(
         filename=f"nomina_carga_{carga_id}.xlsx",
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+@router.get("/historial")
+def listar_historial(db: Session = Depends(get_db)):
+    from app.models.nomina import Carga
+    from app.models.base import Aportante
+    
+    cargas = db.query(Carga).order_by(Carga.periodo.desc(), Carga.id.desc()).all()
+    res = []
+    for c in cargas:
+        aportante = db.query(Aportante).filter(Aportante.id == c.aportante_id).first()
+        res.append({
+            "id": c.id,
+            "periodo": c.periodo.strftime("%Y-%m") if c.periodo else "",
+            "estado": c.estado,
+            "creado_at": c.creado_at.strftime("%Y-%m-%d") if c.creado_at else "",
+            "aportante": {
+                "razon_social": aportante.razon_social if aportante else "Desconocido",
+                "numero_documento": aportante.numero_documento if aportante else ""
+            },
+            "operador": c.operador or "Desconocido",
+            "ruta_descarga": f"/api/cargas/descargar/{c.id}" if c.estado == "procesada" else None
+        })
+    return res
 
 
 

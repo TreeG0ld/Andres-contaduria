@@ -58,14 +58,17 @@ class MotorFormulas:
                 valor = 0
                 print(f"Error evaluando formula {f.codigo}: {e}")
                 
+            # Truncar los decimales (eliminar la parte decimal del final)
+            valor_truncado = int(valor) if valor else 0
+            
             # Guardamos en contexto para formulas subsecuentes
-            contexto[f.codigo] = valor
+            contexto[f.codigo] = float(valor_truncado)
             
             resultados.append(ValorCalculado(
                 linea_id=linea.id,
                 codigo=f.codigo,
                 orden=f.orden,
-                valor_original=Decimal(str(round(valor, 2)))
+                valor_original=Decimal(valor_truncado)
             ))
             
         return resultados
