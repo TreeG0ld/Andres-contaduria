@@ -87,19 +87,19 @@ export default function PantallaFormulas() {
       {loading ? (
         <div style={{ textAlign: "center", padding: "3rem", color: "#6B7280" }}>Cargando fórmulas...</div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: selectedFormula ? "1.2fr 1fr" : "1fr", gap: "2rem", alignItems: "start" }}>
+         <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: "2rem", alignItems: "start" }}>
           
           {/* Listado de Fórmulas */}
-          <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "1.5rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+          <div style={{ flex: "1.2", minWidth: "450px", background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "1.5rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
             <h2 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "1rem", color: "#1F2937" }}>Orden de las fórmulas</h2>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#F9FAFB", borderBottom: "1px solid #E5E7EB", textAlign: "left" }}>
                     <th style={{ padding: "0.75rem", width: "60px" }}>Orden</th>
-                    <th style={{ padding: "0.75rem" }}>Código</th>
-                    <th style={{ padding: "0.75rem" }}>Nombre</th>
-                    <th style={{ padding: "0.75rem" }}>Fórmula</th>
+                    <th style={{ padding: "0.75rem", width: "120px" }}>Celda (Plana)</th>
+                    <th style={{ padding: "0.75rem" }}>Concepto</th>
+                    <th style={{ padding: "0.75rem" }}>Fórmula contable</th>
                     <th style={{ padding: "0.75rem", textRight: "right" }}>Acción</th>
                   </tr>
                 </thead>
@@ -109,7 +109,7 @@ export default function PantallaFormulas() {
                     return (
                       <tr key={f.id} style={{ borderBottom: "1px solid #F3F4F6", backgroundColor: isSelected ? "#F3F4F6" : "transparent" }}>
                         <td style={{ padding: "0.75rem", fontWeight: "600", color: "#6B7280" }}>{f.orden}</td>
-                        <td style={{ padding: "0.75rem", fontWeight: "600", color: "#1E40AF" }}>{f.codigo}</td>
+                        <td style={{ padding: "0.75rem", fontWeight: "700", color: "#1E40AF" }}>{f.columna}</td>
                         <td style={{ padding: "0.75rem", color: "#374151" }}>{f.etiqueta}</td>
                         <td style={{ padding: "0.75rem", fontFamily: "monospace", color: "#059669" }}>{f.expresion}</td>
                         <td style={{ padding: "0.75rem" }}>
@@ -137,9 +137,9 @@ export default function PantallaFormulas() {
 
           {/* Formulario de Edición */}
           {selectedFormula && (
-            <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "1.5rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+            <div style={{ flex: "1", minWidth: "320px", background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "1.5rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
               <h3 style={{ fontSize: "16px", fontWeight: "700", margin: "0 0 1rem 0", color: "#1F2937" }}>
-                Modificar fórmula: {selectedFormula.codigo}
+                Modificar fórmula: Celda {selectedFormula.columna} ({selectedFormula.etiqueta})
               </h3>
 
               <form onSubmit={handleUpdateFormula} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -163,8 +163,9 @@ export default function PantallaFormulas() {
                     style={{ padding: "0.5rem", border: "1px solid #D1D5DB", borderRadius: "6px", fontSize: "13px", fontFamily: "monospace" }}
                     required
                   />
-                  <small style={{ color: "#6B7280", fontSize: "11px" }}>
-                    Puedes usar variables de la planilla (ej: <code>IBC_PENSION</code>), del mes (ej: <code>SALARIO_MINIMO</code>) u otras fórmulas anteriores.
+                  <small style={{ color: "#6B7280", fontSize: "11px", lineHeight: "1.4" }}>
+                    Usa celdas de salida (ej: <b>V2</b>, <b>W5</b>) y variables de entrada entre corchetes (ej: <code>[IBC Pensión]</code>).<br />
+                    Ejemplo: <code>REDONDEAR.MENOS(V2 * 40%; -3)</code> o <code>V2 + V3 + V4 - W5 - W6</code>.
                   </small>
                 </div>
 

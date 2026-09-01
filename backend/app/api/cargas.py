@@ -3,8 +3,11 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.parsers.soi import SOIParser
 from app.parsers.arus import ARUSParser
+from app.parsers.simple import SimpleParser
+from app.parsers.aportes_en_linea import AportesEnLineaParser
 from app.models.base import Aportante, Trabajador, Vinculo
 from app.models.nomina import Carga, LineaNomina, ValorCalculado
+from app.calculos.motor import MotorFormulas
 from datetime import date
 import tempfile
 import os
@@ -20,15 +23,19 @@ async def cargar_pdf(
 ):
     # Guardar archivo temporalmente
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        shutil.copyfileobj(pdf_file.file, tmp)
+        tmp.write(await pdf_file.read())
         tmp_path = tmp.name
         
     try:
         # 1. Extraccion
-        if operador == "soi":
+        if operador.lower() == "soi":
             parser = SOIParser()
-        elif operador == "arus":
+        elif operador.lower() == "arus":
             parser = ARUSParser()
+        elif operador.lower() == "simple":
+            parser = SimpleParser()
+        elif operador.lower() == "aportes_en_linea":
+            parser = AportesEnLineaParser()
         else:
             return {"error": f"Operador {operador} no implementado aun"}
             
@@ -61,15 +68,11 @@ async def cargar_pdf(
         ).first()
         
         if carga:
-            # Primero eliminar valores calculados asociados
-            db.query(ValorCalculado).filter(
-                ValorCalculado.linea_id.in_(
-                    db.query(LineaNomina.id).filter(LineaNomina.carga_id == carga.id)
-                )
-            ).delete(synchronize_session=False)
-            
-            # Ahora sí eliminar las líneas de nómina
-            db.query(LineaNomina).filter(LineaNomina.carga_id == carga.id).delete(synchronize_session=False)
+            # Delete old lineas and their calculated values to recalculate
+            lineas_viejas_ids = [l[0] for l in db.query(LineaNomina.id).filter(LineaNomina.carga_id == carga.id).all()]
+            if lineas_viejas_ids:
+                db.query(ValorCalculado).filter(ValorCalculado.linea_id.in_(lineas_viejas_ids)).delete(synchronize_session=False)
+                db.query(LineaNomina).filter(LineaNomina.carga_id == carga.id).delete(synchronize_session=False)
             
             carga.operador = carga_data.operador
             carga.numero_planilla = carga_data.numero_planilla
@@ -156,6 +159,7 @@ async def cargar_pdf(
                 ibc_riesgos=line.ibc_riesgos,
                 ibc_ccf=line.ibc_ccf,
                 salario_basico=line.salario_basico,
+                tarifa_riesgos=line.tarifa_riesgos,
                 nov_ing=line.novedades.ing,
                 nov_ret=line.novedades.ret,
                 nov_crudas=crudas_dict
@@ -220,7 +224,7 @@ from pydantic import BaseModel
 
 class ConfirmarNitsRequest(BaseModel):
     nit_ccf: str
-    nit_afp: str
+    nit_arl: str
 
 class ClasificarTrabajadoresRequest(BaseModel):
     clasificaciones: dict[int, str]
@@ -246,7 +250,14 @@ def _generar_excel_carga(db: Session, carga):
     
     almacen_path = Path(settings.almacen_dir) / "exportaciones"
     almacen_path.mkdir(parents=True, exist_ok=True)
-    dest_file = almacen_path / f"nomina_carga_{carga.id}.xlsx"
+    
+    # Nombre de archivo: nomina_{nombreempresa}_{periodo}
+    from app.models.base import Aportante
+    aportante = db.query(Aportante).filter(Aportante.id == carga.aportante_id).first()
+    nombre_empresa = aportante.razon_social.replace(" ", "_").replace("/", "-") if aportante else "empresa"
+    periodo_str = carga.periodo.strftime("%Y-%m")
+    
+    dest_file = almacen_path / f"nomina_{nombre_empresa}_{periodo_str}.xlsx"
     
     if os.path.exists(temp_xlsx_path):
         shutil.copy(temp_xlsx_path, dest_file)
@@ -295,20 +306,20 @@ async def confirmar_nits(
         
     # Guardar los NITs en el perfil de la empresa
     aportante.nit_ccf = req.nit_ccf
-    aportante.nit_afp = req.nit_afp
+    aportante.nit_arl = req.nit_arl
     db.commit()
     
     # Validar si hay trabajadores sin clasificar en esta carga
-    unclassified_workers = db.query(Trabajador).join(
+    # CAMBIO: Ahora retornamos TODOS los trabajadores de la planilla, independientemente de si están clasificados
+    all_workers = db.query(Trabajador).join(
         Vinculo, Vinculo.trabajador_id == Trabajador.id
     ).join(
         LineaNomina, LineaNomina.vinculo_id == Vinculo.id
     ).filter(
-        LineaNomina.carga_id == carga.id,
-        (Trabajador.clase_gasto.is_(None)) | (~Trabajador.clase_gasto.in_(["51", "52", "72"]))
+        LineaNomina.carga_id == carga.id
     ).distinct().all()
     
-    if unclassified_workers:
+    if all_workers:
         return {
             "status": "needs_workers_classification",
             "carga_id": carga.id,
@@ -316,20 +327,21 @@ async def confirmar_nits(
                 {
                     "id": t.id,
                     "nombre_completo": t.nombre_completo,
-                    "numero_documento": t.numero_documento
+                    "numero_documento": t.numero_documento,
+                    "clase_gasto": t.clase_gasto
                 }
-                for t in unclassified_workers
+                for t in all_workers
             ]
         }
         
-    # Si todos están clasificados, generar Excel
-    _generar_excel_carga(db, carga)
-    
+    # Si no hay trabajadores (raro, pero posible si está vacía)
+    carga.estado = "calculada"
+    db.commit()
+        
     return {
         "status": "success",
-        "mensaje": "NITs configurados y Excel generado con éxito",
-        "carga_id": carga.id,
-        "ruta_descarga": f"/api/cargas/descargar/{carga.id}"
+        "mensaje": "NITs configurados con éxito",
+        "carga_id": carga.id
     }
 
 @router.post("/{carga_id}/clasificar_trabajadores")
@@ -353,14 +365,14 @@ async def clasificar_trabajadores(
                 trabajador.clase_gasto = clase
     db.commit()
     
-    # Generar el Excel
-    _generar_excel_carga(db, carga)
+    # Cambiar estado a calculada
+    carga.estado = "calculada"
+    db.commit()
     
     return {
         "status": "success",
-        "mensaje": "Trabajadores clasificados y Excel generado con éxito",
-        "carga_id": carga.id,
-        "ruta_descarga": f"/api/cargas/descargar/{carga.id}"
+        "mensaje": "Trabajadores clasificados con éxito",
+        "carga_id": carga.id
     }
 
 @router.get("/descargar/{carga_id}")
@@ -382,7 +394,7 @@ async def descargar_excel(
         
     return FileResponse(
         path=path,
-        filename=f"nomina_carga_{carga_id}.xlsx",
+        filename=path.name,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 

@@ -100,7 +100,15 @@ class SOIParser(ParserBase):
                                 
                                 nombre_emp = row[2].replace("\n", " ").strip()
                                 tipo_cot_emp = row[3].strip()
-                                salario = parse_money(row[5])
+                                
+                                # IBCs
+                                ibc_pen = parse_money(row[29])
+                                ibc_sal = parse_money(row[39])
+                                ibc_riesgos = parse_money(row[45])
+                                ibc_cajas = parse_money(row[49])
+                                
+                                # Calculate Base Salary directly from IBC Salud
+                                salario = ibc_sal
                                 
                                 # Days
                                 d_afp = int(row[28].replace("\n", "").strip() or 0)

@@ -39,6 +39,7 @@ class LineaNomina(Base):
     ibc_ccf = Column(Numeric(15, 2), nullable=False, default=0)
     
     tarifa_riesgos = Column(Numeric(15, 4), nullable=True)
+    
     salario_basico = Column(Numeric(15, 2), nullable=True)
     
     nov_ing = Column(Boolean, nullable=False, default=False)

@@ -42,8 +42,8 @@ def exportar_nomina(db: Session, carga_id: int, period: date, mapeos: list[Mapeo
     mapeos_ordenados = sorted(mapeos, key=lambda m: m.posicion)
     fecha_elaboracion = get_last_day_of_month(period)
     
-    # Obtener todas las líneas de la carga
-    lineas = db.query(LineaNomina).filter(LineaNomina.carga_id == carga_id).all()
+    # Obtener todas las líneas de la carga en orden de inserción (orden original del PDF)
+    lineas = db.query(LineaNomina).filter(LineaNomina.carga_id == carga_id).order_by(LineaNomina.id.asc()).all()
     
     # Consecutivo de comprobante aumenta por cada trabajador
     consecutivo_comprobante = 1
@@ -84,17 +84,14 @@ def exportar_nomina(db: Session, carga_id: int, period: date, mapeos: list[Mapeo
             third_party = worker_doc
             if map_row.posicion in [8, 10, 12] and aportante:
                 if concept == "aporte_pension":
-                    third_party = aportante.nit_afp or ""
+                    third_party = aportante.numero_documento or ""
                 elif concept == "aporte_arl":
-                    third_party = aportante.numero_documento or ""  # El NIT de la ARL es el del Aportante (siempre está en la planilla)
+                    third_party = aportante.nit_arl or ""
                 elif concept == "aporte_ccf":
                     third_party = aportante.nit_ccf or ""
-
-
-
                 
-            # Débito vs Crédito (truncados a enteros para eliminar decimales)
-            amount_int = int(amount) if amount else 0
+            # Débito vs Crédito (redondeados a enteros para cumplir regla contable)
+            amount_int = round(float(amount)) if amount else 0
             debito_val = amount_int if side == "debito" else 0
             credito_val = amount_int if side == "credito" else 0
             
@@ -102,7 +99,7 @@ def exportar_nomina(db: Session, carga_id: int, period: date, mapeos: list[Mapeo
             row_data = [""] * 27
             row_data[0] = 8  # Tipo de comprobante (A)
             row_data[1] = consecutivo_comprobante  # Consecutivo aumenta por trabajador (B)
-            row_data[2] = fecha_elaboracion.strftime("%Y-%m-%d")  # Fecha (C)
+            row_data[2] = fecha_elaboracion.strftime("%d/%m/%Y")  # Fecha (C)
             row_data[3] = "COP"  # Moneda (D)
             row_data[5] = account_code  # Cuenta (F)
             row_data[6] = third_party  # Tercero (G)

@@ -133,82 +133,72 @@ class ARUSParser(ParserBase):
                             max_rows = len(table)
             
             if cotizantes_table:
-                # We skip headers (usually Row 0 and 1 are headers)
-                for row in cotizantes_table[2:]:
-                    # Check if the row represents an employee (first cell should contain CC/NIT/TI/PT etc.)
-                    if row and row[0] and ("CC" in row[0] or "NIT" in row[0] or "TI" in row[0] or "PT" in row[0] or "CE" in row[0] or "PA" in row[0]):
-                        # Document type and number
-                        doc_parts = str(row[0]).strip().split(" ")
-                        tipo_doc_emp = doc_parts[0].strip()
-                        num_doc_emp = doc_parts[1].strip() if len(doc_parts) > 1 else doc_parts[0].strip()
+                # Extracción por bloques usando expresiones regulares (inmune a saltos de línea)
+                pattern = r'(CC|CE|NIT|TI|PA|RC)\s+(\d+)'
+                matches = list(re.finditer(pattern, text))
+                
+                for i in range(len(matches)):
+                    start = matches[i].start()
+                    end = matches[i+1].start() if i + 1 < len(matches) else len(text)
+                    block = text[start:end]
+                    
+                    # We use regex to find the 13 money values, e.g., $ 408.545
+                    moneys = re.findall(r"\$\s*([\d\.\,]+)", block)
+                    
+                    if len(moneys) >= 13:
+                        tipo_doc_emp = matches[i].group(1).strip()
+                        num_doc_emp = matches[i].group(2).strip()
                         
-                        nombre_emp = str(row[1]).replace("\n", " ").strip()
-                        tipo_cot_emp = str(row[2]).strip()
-                        subtipo_cot_emp = str(row[3]).strip()
+                        # Extraer Tipo, Subtipo, Novedades y Días
+                        match_datos = re.search(r"(\d{2})\s+(\d{2}|[A-Z0-9]+)([\sX0]*?)(\d{1,2})[\s]*(\d{1,2})[\s]*(\d{1,2})[\s]*(\d{1,2})\s*\(", block)
                         
-                        # Novedades (Reversed headers)
-                        # Column 4: GNI -> ING
-                        # Column 5: TER -> RET
-                        has_ing = bool(row[4] and row[4].strip())
-                        has_ret = bool(row[5] and row[5].strip())
+                        if match_datos:
+                            tipo_cot_emp = match_datos.group(1)
+                            subtipo_cot_emp = match_datos.group(2)
+                            
+                            novedades_str = match_datos.group(3)
+                            xs = [x for x in novedades_str.split() if x == 'X']
+                            has_ing = len(xs) > 0
+                            has_ret = len(xs) > 1
+                            
+                            d_afp, d_eps, d_arl, d_ccf = map(int, match_datos.groups()[3:7])
+                        else:
+                            tipo_cot_emp = "01"
+                            subtipo_cot_emp = "00"
+                            has_ing = False
+                            has_ret = False
+                            d_afp, d_eps, d_arl, d_ccf = 0, 0, 0, 0
                         
-                        mapping = {
-                            4: "ING",
-                            5: "RET",
-                            7: "TDE",
-                            8: "TAE",
-                            9: "TDP",
-                            10: "TAP",
-                            11: "VSP",
-                            12: "VST",
-                            13: "SLN",
-                            14: "IGE",
-                            15: "LMA",
-                            16: "VAC",
-                            17: "AVP",
-                            18: "VCT",
-                            19: "IRP"
-                        }
-                        crudas = {}
-                        for col_idx, key in mapping.items():
-                            if col_idx < len(row) and row[col_idx] and str(row[col_idx]).strip():
-                                val = str(row[col_idx]).strip()
-                                crudas[key] = val
-                                if key == "VSP":
-                                    crudas["COR"] = val
-                                    
-                        novedades = Novedades(ing=has_ing, ret=has_ret, crudas=crudas)
+                        # Parse moneys (los primeros 13 siempre corresponden al trabajador)
+                        ibc_pen = parse_money(moneys[0])
+                        ap_pen = parse_money(moneys[1])
+                        ibc_sal = parse_money(moneys[2])
+                        ap_sal = parse_money(moneys[3])
+                        ibc_riesgos = parse_money(moneys[4])
+                        ap_arl = parse_money(moneys[5])
+                        ibc_cajas = parse_money(moneys[6])
+                        ap_ccf = parse_money(moneys[7])
                         
-                        # Days
-                        d_afp = int(str(row[20]).replace("\n", "").strip() or 0)
-                        d_eps = int(str(row[21]).replace("\n", "").strip() or 0)
-                        d_arl = int(str(row[22]).replace("\n", "").strip() or 0)
-                        d_ccf = int(str(row[23]).replace("\n", "").strip() or 0)
                         dias = Dias(afp=d_afp, eps=d_eps, arp=d_arl, ccf=d_ccf)
                         
-                        # IBCs
-                        ibc_pen = parse_money(row[25])
-                        ibc_sal = parse_money(row[28])
-                        ibc_riesgos = parse_money(row[31])
-                        ibc_cajas = parse_money(row[34])
+                        # Dummy for nombre_completo (Regex between doc number and tipo cotizante)
+                        # Removemos saltos de línea del bloque para buscar el nombre
+                        block_flat = block.replace('\n', ' ')
+                        name_match = re.search(rf"{num_doc_emp}\s+(.*?)\s+{tipo_cot_emp}\s+{subtipo_cot_emp}", block_flat)
+                        nombre_emp = name_match.group(1).strip() if name_match else "TRABAJADOR DESCONOCIDO"
                         
-                        # Tarifa Riesgos
-                        tarifa_riesgos = parse_tarifa(row[30])
+                        crudas = {}
+                        novedades = Novedades(ing=has_ing, ret=has_ret, crudas=crudas)
                         
-                        # Calculate Base Salary projecting it if they worked less than 30 days
-                        dias_p = max(d_afp, 1)
-                        if d_afp < 30 and d_afp > 0:
-                            salario = (ibc_pen / Decimal(str(dias_p))) * Decimal("30")
-                        else:
-                            salario = ibc_pen
-                            
-                        # Aportes
-                        ap_ccf = parse_money(row[35])
-                        ap_arl = parse_money(row[32])
+                        # Calculate Base Salary directly from IBC Salud (General Base)
+                        salario = ibc_sal
                         
-                        # Guardar aportes en crudas para uso del motor (al igual que en SOI)
+                        # Guardar aportes en crudas para uso del motor
                         crudas["aporte_arl"] = float(ap_arl)
                         crudas["aporte_ccf"] = float(ap_ccf)
+                        
+                        # Tarifa riesgos
+                        tarifa_riesgos = Decimal("0")
                         
                         lineas.append(LineaCotizante(
                             tipo_documento=tipo_doc_emp,
