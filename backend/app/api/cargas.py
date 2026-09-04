@@ -19,6 +19,7 @@ router = APIRouter()
 async def cargar_pdf(
     pdf_file: UploadFile = File(...),
     operador: str = Form(...),
+    consecutivo_inicial: int = Form(1),
     db: Session = Depends(get_db)
 ):
     # Guardar archivo temporalmente
@@ -76,6 +77,7 @@ async def cargar_pdf(
             
             carga.operador = carga_data.operador
             carga.numero_planilla = carga_data.numero_planilla
+            carga.consecutivo_inicial = consecutivo_inicial
             carga.estado = "cargada"
 
         else:
@@ -84,6 +86,7 @@ async def cargar_pdf(
                 operador=carga_data.operador,
                 numero_planilla=carga_data.numero_planilla,
                 periodo=periodo,
+                consecutivo_inicial=consecutivo_inicial,
                 estado="cargada"
             )
             db.add(carga)

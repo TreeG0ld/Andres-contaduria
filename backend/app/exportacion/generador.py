@@ -45,8 +45,10 @@ def exportar_nomina(db: Session, carga_id: int, period: date, mapeos: list[Mapeo
     # Obtener todas las líneas de la carga en orden de inserción (orden original del PDF)
     lineas = db.query(LineaNomina).filter(LineaNomina.carga_id == carga_id).order_by(LineaNomina.id.asc()).all()
     
-    # Consecutivo de comprobante aumenta por cada trabajador
-    consecutivo_comprobante = 1
+    # Obtener el objeto carga para saber su consecutivo inicial
+    from app.models.nomina import Carga
+    carga = db.query(Carga).filter(Carga.id == carga_id).first()
+    consecutivo_comprobante = carga.consecutivo_inicial if carga.consecutivo_inicial else 1
     
     for linea in lineas:
         # Cargar detalles del trabajador y aportante

@@ -15,6 +15,7 @@ class Carga(Base):
     hash_archivo = Column(String, nullable=True)
     estado = Column(String, nullable=False, default="cargada")
     version_formula_id = Column(Integer, nullable=True)
+    consecutivo_inicial = Column(Integer, default=1)
     creado_at = Column(Date, default=datetime.date.today)
 
     __table_args__ = (

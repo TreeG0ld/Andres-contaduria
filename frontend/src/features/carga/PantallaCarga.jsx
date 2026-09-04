@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 export default function PantallaCarga() {
   const [file, setFile] = useState(null);
   const [operador, setOperador] = useState('soi');
+  const [consecutivoInicial, setConsecutivoInicial] = useState(1);
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState(null);
 
@@ -46,6 +47,7 @@ export default function PantallaCarga() {
     const formData = new FormData();
     formData.append("pdf_file", file);
     formData.append("operador", operador);
+    formData.append("consecutivo_inicial", consecutivoInicial);
 
     try {
       const response = await fetch("/api/cargas/cargar", {
@@ -501,6 +503,25 @@ export default function PantallaCarga() {
               <option value="simple">SIMPLE</option>
               <option value="aportes_en_linea">APORTES EN LINEA</option>
             </select>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <label style={{ fontSize: "14px", fontWeight: "600", color: "#374151" }}>Consecutivo Inicial:</label>
+            <input
+              type="number"
+              value={consecutivoInicial}
+              onChange={(e) => setConsecutivoInicial(parseInt(e.target.value) || 1)}
+              min="1"
+              style={{
+                padding: "0.8rem",
+                border: "1px solid #D1D5DB",
+                borderRadius: "8px",
+                fontSize: "14px",
+                outline: "none",
+                width: "100%",
+                boxSizing: "border-box"
+              }}
+            />
           </div>
 
           {/* Botón de Enviar */}
