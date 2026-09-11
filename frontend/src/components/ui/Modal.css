@@ -21,6 +21,10 @@
   backdrop-filter: blur(3px);
 }
 
+/* Sin borde claro y sin overflow:hidden a propósito: el borde dibujaba una
+   línea clara justo encima de la cabecera negra, y recortar contra las
+   esquinas redondeadas del padre deja un hilo blanco mientras el panel se
+   escala al abrir. Cada tramo redondea sus propias esquinas. */
 .modal {
   position: relative;
   z-index: 1;
@@ -30,10 +34,8 @@
   max-width: 560px;
   max-height: calc(100vh - var(--e-6));
   background: var(--bg-elevada);
-  border: 1px solid var(--borde);
   border-radius: var(--radio);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
-  overflow: hidden;
 }
 
 .modal--ancho {
@@ -50,6 +52,7 @@
   padding: var(--e-4) var(--e-5);
   background: var(--sidebar-bg);
   color: var(--sidebar-texto-activo);
+  border-radius: var(--radio) var(--radio) 0 0;
 }
 
 .modal__titulo {
@@ -101,6 +104,7 @@
   padding: var(--e-4) var(--e-5);
   border-top: 1px solid var(--borde);
   background: var(--bg-sutil);
+  border-radius: 0 0 var(--radio) var(--radio);
 }
 
 @media (max-width: 560px) {

@@ -9,13 +9,16 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 9px;
   min-height: 44px;
-  padding: 9px 12px;
+  padding: 9px 10px;
   border-radius: var(--radio-sm);
   color: var(--sidebar-texto);
   text-decoration: none;
   font-size: 13.5px;
+  /* Con la barra angosta las etiquetas largas caen a dos líneas: se ajusta
+     el interlineado para que el salto no se vea suelto */
+  line-height: 1.3;
   overflow: hidden;
   transition: color 0.15s;
 }

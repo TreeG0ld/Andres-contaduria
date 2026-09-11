@@ -90,11 +90,76 @@
   box-shadow: var(--sombra-md);
 }
 
+/* Vidrio esmerilado: deja entrever lo que hay detrás sin que el texto pierda
+   legibilidad. Va tras @supports a propósito — donde no haya desenfoque, un
+   panel translúcido dejaría las opciones ilegibles sobre la tabla, así que
+   ahí se queda el fondo sólido de arriba. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  /* El desenfoque es bajo a propósito. Detrás del menú casi siempre hay
+     superficie clara, y desenfocar mucho blanco devuelve blanco: el vidrio
+     deja de notarse. Con menos blur las formas de atrás conservan su silueta
+     y el efecto se ve de verdad. */
+  .selector-menu {
+    background: rgba(255, 255, 255, 0.34);
+    -webkit-backdrop-filter: blur(12px) saturate(200%);
+    backdrop-filter: blur(12px) saturate(200%);
+    border-color: rgba(255, 255, 255, 0.75);
+    box-shadow: var(--sombra-md), 0 0 0 1px rgba(24, 24, 27, 0.07),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  }
+
+  /* Con un tercio de opacidad el gris tenue desaparece contra lo que se
+     transparenta: el texto en reposo se oscurece para sostener el contraste.
+     La jerarquía la siguen marcando el peso y el check, no el color. */
+  .selector-menu .selector-opcion {
+    color: #3f3f46;
+  }
+
+  .selector-menu .selector-opcion--activa,
+  .selector-menu .selector-opcion--elegida {
+    color: var(--texto);
+  }
+
+  /* Sobre vidrio, un resaltado opaco se ve como un parche: se tiñe */
+  .selector-menu .selector-opcion__fondo {
+    background: rgba(24, 24, 27, 0.09);
+  }
+
+  /* La opción elegida se apoya en un velo más denso para que el texto en
+     negrita no compita con lo que se transparenta debajo */
+  .selector-menu .selector-opcion--elegida {
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+  }
+}
+
 .selector-menu__lista {
   margin: 0;
   padding: var(--e-1);
   list-style: none;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(24, 24, 27, 0.25) transparent;
+}
+
+/* Barra de scroll discreta, para no romper el vidrio con un riel opaco */
+.selector-menu__lista::-webkit-scrollbar {
+  width: 8px;
+}
+
+.selector-menu__lista::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.selector-menu__lista::-webkit-scrollbar-thumb {
+  background: rgba(24, 24, 27, 0.22);
+  border-radius: var(--radio-pill);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.selector-menu__lista::-webkit-scrollbar-thumb:hover {
+  background: rgba(24, 24, 27, 0.35);
+  background-clip: content-box;
 }
 
 .selector-opcion {

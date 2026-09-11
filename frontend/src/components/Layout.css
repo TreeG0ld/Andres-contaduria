@@ -4,7 +4,8 @@
 }
 
 .sidebar {
-  width: 248px;
+  /* 70% del ancho anterior (248px) */
+  width: 174px;
   flex-shrink: 0;
   background: var(--sidebar-bg);
   color: var(--sidebar-texto);

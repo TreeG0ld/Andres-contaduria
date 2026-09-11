@@ -1,4 +1,4 @@
-import { useEffect, useRef, useId } from 'react';
+import { useEffect, useRef, useState, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { IconoCerrar } from '../iconos';
@@ -34,7 +34,15 @@ export default function Modal({
   const focoPrevioRef = useRef(null);
   const sinMovimiento = useReducedMotion();
 
+  // "presente" cubre también la animación de salida: sigue en true mientras
+  // el panel se está yendo. De eso depende el bloqueo del scroll (ver abajo).
+  const [presente, setPresente] = useState(abierto);
+
   const idTitulo = `${useId()}-titulo`;
+
+  useEffect(() => {
+    if (abierto) setPresente(true);
+  }, [abierto]);
 
   // Recuerda quién tenía el foco y se lo devuelve al cerrar
   useEffect(() => {
@@ -59,10 +67,14 @@ export default function Modal({
     return () => cancelAnimationFrame(id);
   }, [abierto]);
 
-  // Bloquea el scroll del fondo compensando el ancho de la barra, para que
-  // la página no dé un salto lateral al abrir
+  // Bloquea el scroll del fondo compensando el ancho de la barra.
+  //
+  // Depende de "presente", no de "abierto": si se soltara al pulsar cerrar,
+  // la barra de scroll reaparecería con la animación de salida a medias, el
+  // viewport se angostaría y el panel —centrado sobre una capa fija— se iría
+  // de lado justo mientras se desvanece.
   useEffect(() => {
-    if (!abierto) return;
+    if (!presente) return;
     const { body } = document;
     const anchoBarra = window.innerWidth - document.documentElement.clientWidth;
     const overflowPrevio = body.style.overflow;
@@ -75,7 +87,7 @@ export default function Modal({
       body.style.overflow = overflowPrevio;
       body.style.paddingRight = paddingPrevio;
     };
-  }, [abierto]);
+  }, [presente]);
 
   const alPresionarTecla = (e) => {
     if (e.key === 'Escape') {
@@ -107,7 +119,12 @@ export default function Modal({
   };
 
   return createPortal(
-    <AnimatePresence onExitComplete={onCerrado}>
+    <AnimatePresence
+      onExitComplete={() => {
+        setPresente(false);
+        onCerrado?.();
+      }}
+    >
       {abierto && (
         <div className="modal-capa">
           <motion.div
@@ -115,7 +132,7 @@ export default function Modal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: sinMovimiento ? 0.001 : 0.2 }}
+            transition={{ duration: sinMovimiento ? 0.001 : 0.18 }}
             onClick={onCerrar}
           />
 
@@ -128,11 +145,20 @@ export default function Modal({
             tabIndex={-1}
             onKeyDown={alPresionarTecla}
             initial={sinMovimiento ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
-            animate={sinMovimiento ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-            exit={sinMovimiento ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: 6 }}
-            transition={
-              sinMovimiento ? { duration: 0.001 } : { ...ENTRADA, exit: SALIDA }
-            }
+            animate={{
+              opacity: 1,
+              scale: 1,
+              y: 0,
+              transition: sinMovimiento ? { duration: 0.001 } : ENTRADA,
+            }}
+            // Sale solo desvaneciéndose y encogiendo un pelo: sin desplazar
+            // en Y, que es lo que hacía ver el cierre como un tirón.
+            exit={{
+              opacity: 0,
+              scale: 0.98,
+              y: 0,
+              transition: sinMovimiento ? { duration: 0.001 } : SALIDA,
+            }}
           >
             <header className="modal__cabecera">
               <div>

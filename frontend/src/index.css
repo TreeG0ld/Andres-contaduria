@@ -546,11 +546,11 @@ select.control--sm {
 
 .tabla th {
   text-align: left;
-  font-weight: 700;
-  font-size: var(--t-xs);
-  letter-spacing: 0.04em;
+  font-weight: 800;
+  font-size: var(--t-sm);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: var(--texto-tenue);
+  color: var(--texto);
   background: var(--bg-sutil);
   padding: var(--e-3) var(--e-4);
   border-bottom: 1px solid var(--borde);
