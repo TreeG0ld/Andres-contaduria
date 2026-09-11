@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import Aviso from '../../components/Aviso';
+import Modal from '../../components/ui/Modal';
+import BotonAccion from '../../components/ui/BotonAccion';
+import { IconoEditar } from '../../components/iconos';
+import './PantallaFormulas.css';
 
 export default function PantallaFormulas() {
   const [formulas, setFormulas] = useState([]);
   const [selectedFormula, setSelectedFormula] = useState(null);
+  const [modalAbierto, setModalAbierto] = useState(false);
   const [expresion, setExpresion] = useState('');
   const [etiqueta, setEtiqueta] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,6 +38,7 @@ export default function PantallaFormulas() {
     setExpresion(f.expresion);
     setEtiqueta(f.etiqueta);
     setMensaje(null);
+    setModalAbierto(true);
   };
 
   const handleUpdateFormula = async (e) => {
@@ -48,167 +55,141 @@ export default function PantallaFormulas() {
       });
       const data = await response.json();
       if (data.status === 'success') {
-        setMensaje({ tipo: 'success', texto: "¡Listo! Fórmula guardada." });
+        setMensaje({ tipo: 'exito', texto: "¡Listo! Fórmula guardada." });
         setFormulas(formulas.map(f => f.id === selectedFormula.id ? { ...f, expresion, etiqueta } : f));
-        setSelectedFormula(null);
+        setModalAbierto(false);
       } else {
-        setMensaje({ tipo: 'error', texto: data.error || "Error al actualizar." });
+        setMensaje({ tipo: 'peligro', texto: data.error || "Error al actualizar." });
       }
     } catch (err) {
       console.error(err);
-      setMensaje({ tipo: 'error', texto: "Error de conexión." });
+      setMensaje({ tipo: 'peligro', texto: "Error de conexión." });
     } finally {
       setSaveLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "'Outfit', sans-serif" }}>
-      <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ margin: 0, fontSize: "24px", color: "#1E3A8A", fontWeight: "700" }}>Configurar Fórmulas</h1>
-        <p style={{ margin: 0, color: "#6B7280", fontSize: "14px" }}>Aquí puedes ver y cambiar las 19 reglas contables que se aplican a cada trabajador.</p>
-      </div>
-
-      {mensaje && (
-        <div style={{
-          padding: "0.75rem 1rem",
-          borderRadius: "6px",
-          marginBottom: "1.5rem",
-          backgroundColor: mensaje.tipo === 'success' ? '#F0FDF4' : '#FEF2F2',
-          border: `1px solid ${mensaje.tipo === 'success' ? '#86EFAC' : '#FCA5A5'}`,
-          color: mensaje.tipo === 'success' ? '#166534' : '#991B1B',
-          fontSize: "13px",
-          fontWeight: "500"
-        }}>
-          {mensaje.texto}
+    <div className="pagina">
+      <header className="pagina__cabecera">
+        <div>
+          <h1 className="pagina__titulo">Configurar Fórmulas</h1>
+          <p className="pagina__descripcion">
+            Aquí puedes ver y cambiar las 19 reglas contables que se aplican a cada trabajador.
+          </p>
         </div>
-      )}
+      </header>
+
+      {mensaje && <Aviso tipo={mensaje.tipo}>{mensaje.texto}</Aviso>}
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "3rem", color: "#6B7280" }}>Cargando fórmulas...</div>
+        <div className="cargando">Cargando fórmulas...</div>
       ) : (
-         <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: "2rem", alignItems: "start" }}>
-          
-          {/* Listado de Fórmulas */}
-          <div style={{ flex: "1.2", minWidth: "450px", background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "1.5rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-            <h2 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "1rem", color: "#1F2937" }}>Orden de las fórmulas</h2>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                <thead>
-                  <tr style={{ backgroundColor: "#F9FAFB", borderBottom: "1px solid #E5E7EB", textAlign: "left" }}>
-                    <th style={{ padding: "0.75rem", width: "60px" }}>Orden</th>
-                    <th style={{ padding: "0.75rem", width: "120px" }}>Celda (Plana)</th>
-                    <th style={{ padding: "0.75rem" }}>Concepto</th>
-                    <th style={{ padding: "0.75rem" }}>Fórmula contable</th>
-                    <th style={{ padding: "0.75rem", textRight: "right" }}>Acción</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formulas.map(f => {
-                    const isSelected = selectedFormula && selectedFormula.id === f.id;
-                    return (
-                      <tr key={f.id} style={{ borderBottom: "1px solid #F3F4F6", backgroundColor: isSelected ? "#F3F4F6" : "transparent" }}>
-                        <td style={{ padding: "0.75rem", fontWeight: "600", color: "#6B7280" }}>{f.orden}</td>
-                        <td style={{ padding: "0.75rem", fontWeight: "700", color: "#1E40AF" }}>{f.columna}</td>
-                        <td style={{ padding: "0.75rem", color: "#374151" }}>{f.etiqueta}</td>
-                        <td style={{ padding: "0.75rem", fontFamily: "monospace", color: "#059669" }}>{f.expresion}</td>
-                        <td style={{ padding: "0.75rem" }}>
-                          <button
-                            onClick={() => selectFormulaForEdit(f)}
-                            style={{
-                              padding: "0.3rem 0.6rem",
-                              backgroundColor: "transparent",
-                              border: "1px solid #D1D5DB",
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                              fontSize: "12px"
-                            }}
-                          >
-                            Cambiar
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+        <section className="tarjeta">
+          <div className="tarjeta__cabecera">
+            <h2>Orden de las fórmulas</h2>
+            <span className="campo__ayuda">{formulas.length} reglas</span>
+          </div>
+          <div className="tabla-envoltura tabla-envoltura--plana">
+            <table className="tabla">
+              <thead>
+                <tr>
+                  <th className="formulas__orden">Orden</th>
+                  <th className="formulas__celda">Celda</th>
+                  <th>Concepto</th>
+                  <th>Fórmula contable</th>
+                  <th className="tabla__acciones">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {formulas.map(f => {
+                  const isSelected = modalAbierto && selectedFormula?.id === f.id;
+                  return (
+                    <tr key={f.id} className={isSelected ? 'formulas__fila--activa' : undefined}>
+                      <td className="formulas__orden">{f.orden}</td>
+                      <td className="formulas__celda">{f.columna}</td>
+                      <td className="formulas__concepto">{f.etiqueta}</td>
+                      <td className="formulas__expresion">{f.expresion}</td>
+                      <td className="tabla__acciones">
+                        <button
+                          type="button"
+                          className="boton boton--sm"
+                          onClick={() => selectFormulaForEdit(f)}
+                          aria-label={`Cambiar la fórmula ${f.etiqueta}`}
+                        >
+                          <IconoEditar size={14} aria-hidden="true" />
+                          Cambiar
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      <Modal
+        abierto={modalAbierto}
+        onCerrar={() => setModalAbierto(false)}
+        onCerrado={() => setSelectedFormula(null)}
+        titulo={selectedFormula ? `Modificar celda ${selectedFormula.columna}` : ''}
+        descripcion="El cambio se aplica a todos los trabajadores en los siguientes cálculos."
+      >
+        <form onSubmit={handleUpdateFormula}>
+          <div className="modal__cuerpo panel__formulario">
+            <div className="campo">
+              <label className="campo__etiqueta" htmlFor="etiqueta-formula">
+                Nombre descriptivo
+              </label>
+              <input
+                id="etiqueta-formula"
+                type="text"
+                className="control"
+                value={etiqueta}
+                onChange={(e) => setEtiqueta(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="campo">
+              <label className="campo__etiqueta" htmlFor="expresion-formula">
+                Expresión matemática
+              </label>
+              <textarea
+                id="expresion-formula"
+                rows="3"
+                className="control"
+                value={expresion}
+                onChange={(e) => setExpresion(e.target.value)}
+                aria-describedby="ayuda-formula"
+                required
+              />
+              <small className="campo__ayuda formulas__ayuda" id="ayuda-formula">
+                Usa celdas de salida (ej: <code>V2</code>, <code>W5</code>) y variables de
+                entrada entre corchetes (ej: <code>[IBC Pensión]</code>).
+                <br />
+                Ejemplo: <code>REDONDEAR.MENOS(V2 * 40%; -3)</code> o{' '}
+                <code>V2 + V3 + V4 - W5 - W6</code>.
+              </small>
             </div>
           </div>
 
-          {/* Formulario de Edición */}
-          {selectedFormula && (
-            <div style={{ flex: "1", minWidth: "320px", background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "1.5rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "700", margin: "0 0 1rem 0", color: "#1F2937" }}>
-                Modificar fórmula: Celda {selectedFormula.columna} ({selectedFormula.etiqueta})
-              </h3>
-
-              <form onSubmit={handleUpdateFormula} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                  <label style={{ fontSize: "13px", fontWeight: "600", color: "#374151" }}>Nombre descriptivo:</label>
-                  <input
-                    type="text"
-                    value={etiqueta}
-                    onChange={(e) => setEtiqueta(e.target.value)}
-                    style={{ padding: "0.5rem", border: "1px solid #D1D5DB", borderRadius: "6px", fontSize: "13px" }}
-                    required
-                  />
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                  <label style={{ fontSize: "13px", fontWeight: "600", color: "#374151" }}>Expresión matemática:</label>
-                  <textarea
-                    rows="3"
-                    value={expresion}
-                    onChange={(e) => setExpresion(e.target.value)}
-                    style={{ padding: "0.5rem", border: "1px solid #D1D5DB", borderRadius: "6px", fontSize: "13px", fontFamily: "monospace" }}
-                    required
-                  />
-                  <small style={{ color: "#6B7280", fontSize: "11px", lineHeight: "1.4" }}>
-                    Usa celdas de salida (ej: <b>V2</b>, <b>W5</b>) y variables de entrada entre corchetes (ej: <code>[IBC Pensión]</code>).<br />
-                    Ejemplo: <code>REDONDEAR.MENOS(V2 * 40%; -3)</code> o <code>V2 + V3 + V4 - W5 - W6</code>.
-                  </small>
-                </div>
-
-                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                  <button
-                    type="submit"
-                    disabled={saveLoading}
-                    style={{
-                      flex: 1,
-                      padding: "0.7rem",
-                      backgroundColor: "#1D4ED8",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      fontWeight: "600",
-                      cursor: saveLoading ? "not-allowed" : "pointer",
-                      fontSize: "13px"
-                    }}
-                  >
-                    {saveLoading ? "Actualizando..." : "Guardar cambios"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedFormula(null)}
-                    style={{
-                      padding: "0.7rem 1rem",
-                      backgroundColor: "transparent",
-                      border: "1px solid #D1D5DB",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "13px",
-                      color: "#4B5563"
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-        </div>
-      )}
+          <div className="modal__pie">
+            <button
+              type="button"
+              className="boton"
+              onClick={() => setModalAbierto(false)}
+            >
+              Cancelar
+            </button>
+            <BotonAccion type="submit" disabled={saveLoading}>
+              {saveLoading ? "Actualizando..." : "Guardar cambios"}
+            </BotonAccion>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

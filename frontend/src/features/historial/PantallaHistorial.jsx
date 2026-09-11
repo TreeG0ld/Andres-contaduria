@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import Selector from '../../components/ui/Selector';
+import { IconoDescarga, IconoExcel } from '../../components/iconos';
+import './PantallaHistorial.css';
+
+// Estado de la carga -> variante de insignia. El texto siempre acompaña al
+// color, así que el estado se entiende aunque no se distingan los tonos.
+const VARIANTE_ESTADO = {
+  procesada: 'insignia--exito',
+  requiere_config: 'insignia--advertencia',
+};
 
 export default function PantallaHistorial() {
   const [historial, setHistorial] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
   const [filtroEmpresa, setFiltroEmpresa] = useState("TODAS");
   const [filtroPeriodo, setFiltroPeriodo] = useState("TODOS");
 
@@ -43,147 +53,124 @@ export default function PantallaHistorial() {
       });
   };
 
-  const getBadgeStyle = (estado) => {
-    switch (estado) {
-      case 'procesada':
-        return { backgroundColor: "#D1FAE5", color: "#065F46" };
-      case 'requiere_config':
-        return { backgroundColor: "#FEF3C7", color: "#92400E" };
-      default:
-        return { backgroundColor: "#F3F4F6", color: "#374151" };
-    }
-  };
-
   return (
-    <div style={{ padding: "2rem", fontFamily: "'Outfit', sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem", marginBottom: "2rem", backgroundColor: "white", padding: "1.5rem", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+    <div className="pagina">
+      <header className="pagina__cabecera">
         <div>
-          <h1 style={{ margin: "0 0 0.5rem 0", fontSize: "24px", color: "#1E3A8A", fontWeight: "700" }}>Historial de Subidas</h1>
-          <p style={{ margin: 0, color: "#6B7280", fontSize: "14px" }}>Aquí tienes la lista de planillas procesadas antes y sus enlaces para descargar el archivo Excel.</p>
+          <h1 className="pagina__titulo">Historial de Subidas</h1>
+          <p className="pagina__descripcion">
+            Aquí tienes la lista de planillas procesadas antes y sus enlaces para descargar el archivo Excel.
+          </p>
+        </div>
+      </header>
+
+      <div className="filtros">
+        <div className="campo">
+          <label className="campo__etiqueta" id="lbl-filtro-empresa" htmlFor="filtro-empresa">
+            Filtrar por empresa
+          </label>
+          <Selector
+            id="filtro-empresa"
+            aria-labelledby="lbl-filtro-empresa"
+            valor={filtroEmpresa}
+            onChange={setFiltroEmpresa}
+            opciones={[
+              { valor: 'TODAS', etiqueta: 'Todas las empresas' },
+              ...empresasUnicas.map(emp => ({ valor: emp, etiqueta: emp })),
+            ]}
+          />
         </div>
 
-        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <label style={{ fontSize: "12px", color: "#4B5563", marginBottom: "4px", fontWeight: "600" }}>Filtrar por Empresa:</label>
-            <select
-              value={filtroEmpresa}
-              onChange={(e) => setFiltroEmpresa(e.target.value)}
-              style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #D1D5DB", outline: "none", backgroundColor: "white", fontSize: "13px", maxWidth: "250px" }}
-            >
-              <option value="TODAS">-- Todas las Empresas --</option>
-              {empresasUnicas.map(emp => (
-                <option key={emp} value={emp}>{emp}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <label style={{ fontSize: "12px", color: "#4B5563", marginBottom: "4px", fontWeight: "600" }}>Filtrar por Periodo:</label>
-            <select
-              value={filtroPeriodo}
-              onChange={(e) => setFiltroPeriodo(e.target.value)}
-              style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #D1D5DB", outline: "none", backgroundColor: "white", fontSize: "13px", maxWidth: "150px" }}
-            >
-              <option value="TODOS">-- Todos los Meses --</option>
-              {periodosUnicos.map(per => (
-                <option key={per} value={per}>{per}</option>
-              ))}
-            </select>
-          </div>
+        <div className="campo">
+          <label className="campo__etiqueta" id="lbl-filtro-periodo" htmlFor="filtro-periodo">
+            Filtrar por periodo
+          </label>
+          <Selector
+            id="filtro-periodo"
+            aria-labelledby="lbl-filtro-periodo"
+            valor={filtroPeriodo}
+            onChange={setFiltroPeriodo}
+            opciones={[
+              { valor: 'TODOS', etiqueta: 'Todos los meses' },
+              ...periodosUnicos.map(per => ({ valor: per, etiqueta: per })),
+            ]}
+          />
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "3rem", color: "#6B7280" }}>Cargando historial...</div>
+        <div className="cargando">Cargando historial...</div>
       ) : (
-        <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "1.5rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+        <div className="tabla-envoltura">
+          <table className="tabla">
             <thead>
-              <tr style={{ backgroundColor: "#F9FAFB", borderBottom: "1px solid #E5E7EB", textAlign: "left" }}>
-                <th style={{ padding: "0.75rem", width: "80px" }}>Carga</th>
-                <th style={{ padding: "0.75rem" }}>Periodo</th>
-                <th style={{ padding: "0.75rem" }}>Empresa</th>
-                <th style={{ padding: "0.75rem" }}>Operador</th>
-                <th style={{ padding: "0.75rem" }}>Fecha de subida</th>
-                <th style={{ padding: "0.75rem" }}>Estado</th>
-                <th style={{ padding: "0.75rem", textAlign: "right" }}>Descarga</th>
+              <tr>
+                <th className="historial__id">Carga</th>
+                <th>Periodo</th>
+                <th>Empresa</th>
+                <th>Operador</th>
+                <th>Fecha de subida</th>
+                <th>Estado</th>
+                <th className="tabla__acciones">Descarga</th>
               </tr>
             </thead>
             <tbody>
               {historialFiltrado.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: "center", padding: "2rem", color: "#6B7280" }}>
+                  <td colSpan="7" className="tabla__vacio">
                     No hay registros que coincidan con los filtros.
                   </td>
                 </tr>
               ) : (
                 historialFiltrado.map(h => (
-                  <tr key={h.id} style={{ borderBottom: "1px solid #F3F4F6" }}>
-                  <td style={{ padding: "0.75rem", fontWeight: "600", color: "#4B5563" }}>#{h.id}</td>
-                  <td style={{ padding: "0.75rem", fontWeight: "600", color: "#1E40AF" }}>{h.periodo}</td>
-                  <td style={{ padding: "0.75rem", color: "#111827", fontWeight: "500" }}>
-                    {h.aportante.razon_social} <span style={{ color: "#6B7280", fontSize: "11px" }}>(NIT {h.aportante.numero_documento})</span>
-                  </td>
-                  <td style={{ padding: "0.75rem", textTransform: "uppercase" }}>{h.operador}</td>
-                  <td style={{ padding: "0.75rem", color: "#4B5563" }}>{h.creado_at}</td>
-                  <td style={{ padding: "0.75rem" }}>
-                    <span style={{
-                      padding: "0.2rem 0.6rem",
-                      borderRadius: "9999px",
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      ...getBadgeStyle(h.estado)
-                    }}>
-                      {h.estado.toUpperCase()}
-                    </span>
-                  </td>
-                  <td style={{ padding: "0.75rem", textAlign: "right" }}>
-                    <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-                      {h.ruta_descarga_terceros && (
-                        <a
-                          href={h.ruta_descarga_terceros}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            display: "inline-block",
-                            padding: "0.3rem 0.8rem",
-                            backgroundColor: "#10B981", // Verde
-                            color: "white",
-                            borderRadius: "6px",
-                            textDecoration: "none",
-                            fontSize: "12px",
-                            fontWeight: "600"
-                          }}
-                        >
-                          Terceros
-                        </a>
-                      )}
-                      
-                      {h.ruta_descarga ? (
-                        <a
-                          href={h.ruta_descarga}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            display: "inline-block",
-                            padding: "0.3rem 0.8rem",
-                            backgroundColor: "#059669", // Verde oscuro
-                            color: "white",
-                            borderRadius: "6px",
-                            textDecoration: "none",
-                            fontSize: "12px",
-                            fontWeight: "600"
-                          }}
-                        >
-                          Nómina
-                        </a>
-                      ) : (
-                        <span style={{ color: "#9CA3AF", fontSize: "12px", fontStyle: "italic" }}>Pendiente</span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )))}
+                  <tr key={h.id}>
+                    <td className="historial__id">#{h.id}</td>
+                    <td className="historial__periodo">{h.periodo}</td>
+                    <td>
+                      <span className="historial__empresa">
+                        {h.aportante.razon_social || "Sin empresa"}
+                      </span>
+                      <span className="historial__nit">NIT {h.aportante.numero_documento || "—"}</span>
+                    </td>
+                    <td className="historial__operador">{h.operador}</td>
+                    <td className="historial__fecha">{h.creado_at}</td>
+                    <td>
+                      <span className={`insignia ${VARIANTE_ESTADO[h.estado] || ''}`}>
+                        {h.estado.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="tabla__acciones">
+                      <div className="historial__descargas">
+                        {h.ruta_descarga_terceros && (
+                          <a
+                            href={h.ruta_descarga_terceros}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="boton boton--sm"
+                          >
+                            <IconoDescarga size={14} aria-hidden="true" />
+                            Terceros
+                          </a>
+                        )}
+
+                        {h.ruta_descarga ? (
+                          <a
+                            href={h.ruta_descarga}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="boton boton--sm boton--primario"
+                          >
+                            <IconoExcel size={14} aria-hidden="true" />
+                            Nómina
+                          </a>
+                        ) : (
+                          <span className="historial__pendiente">Pendiente</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

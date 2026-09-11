@@ -1,64 +1,282 @@
+/* ==========================================================================
+   Pantalla de carga de planilla
+   ========================================================================== */
+
 .carga {
-  display: grid;
-  gap: 16px;
-  max-width: 420px;
+  max-width: 680px;
+  margin: 0 auto;
 }
 
-.carga__dropzone {
-  border: 1.5px dashed var(--borde);
-  border-radius: var(--radio);
-  background: var(--bg-elevada);
-  padding: 36px 24px;
-  text-align: center;
-  color: var(--texto-tenue);
+.carga--ancha {
+  max-width: 980px;
+}
+
+.carga__formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-5);
+}
+
+/* ==========================================================================
+   Dropzone
+   El <input type="file"> real queda oculto pero enfocable: toda la caja es
+   su <label>, así que clic, teclado y arrastrar-soltar hacen lo mismo.
+   ========================================================================== */
+
+.dropzone {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  cursor: not-allowed;
+  gap: var(--e-3);
+  padding: var(--e-6) var(--e-5);
+  text-align: center;
+  border: 1.5px dashed var(--borde-fuerte);
+  border-radius: var(--radio);
+  background: var(--bg-sutil);
+  cursor: pointer;
+  transition: border-color var(--transicion), background var(--transicion),
+    box-shadow var(--transicion);
 }
 
-.carga__dropzone svg {
+.dropzone:hover {
+  border-color: var(--acento);
+  background: var(--bg-elevada);
+  box-shadow: var(--sombra-md);
+}
+
+/* El anillo de foco vive en la caja, no en el input invisible */
+.dropzone:focus-within {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+  border-style: solid;
+  border-color: var(--acento);
+}
+
+.dropzone--arrastrando {
+  border-color: var(--acento);
+  border-style: solid;
+  background: var(--acento-suave);
+  box-shadow: var(--sombra-md);
+}
+
+.dropzone__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dropzone__icono {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-elevada);
+  border: 1px solid var(--borde);
   color: var(--texto-tenue);
+  transition: background var(--transicion), color var(--transicion),
+    transform var(--transicion), border-color var(--transicion);
 }
 
-.carga__dropzone p {
-  font-size: 13.5px;
+.dropzone:hover .dropzone__icono,
+.dropzone--arrastrando .dropzone__icono {
+  background: var(--acento);
+  border-color: var(--acento);
+  color: var(--on-acento);
+  transform: translateY(-2px);
+}
+
+.dropzone__titulo {
+  font-size: var(--t-base);
+  font-weight: 700;
   color: var(--texto);
 }
 
-.carga__nota {
-  font-size: 12px;
-  color: var(--texto-sutil);
+.dropzone__enlace {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.carga__operador {
+.dropzone__nota {
+  font-size: var(--t-sm);
+  color: var(--texto-tenue);
+}
+
+/* Estado con archivo elegido: la caja se vuelve una ficha del archivo */
+.archivo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--bg-elevada);
+  box-shadow: var(--sombra);
+}
+
+.archivo__icono {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radio-sm);
+  background: var(--acento);
+  color: var(--on-acento);
+}
+
+.archivo__datos {
+  min-width: 0;
+  flex: 1;
+}
+
+.archivo__nombre {
+  font-size: var(--t-base);
+  font-weight: 700;
+  color: var(--texto);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archivo__meta {
+  font-size: var(--t-sm);
+  color: var(--texto-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   Paneles secundarios (asistente de NITs, clasificación)
+   ========================================================================== */
+
+.panel {
+  margin-top: var(--e-6);
+  padding: var(--e-5);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--bg-elevada);
+  box-shadow: var(--sombra);
+}
+
+.panel__titulo {
+  font-size: var(--t-lg);
+  font-weight: 800;
+  margin-bottom: var(--e-1);
+}
+
+.panel__descripcion {
+  font-size: var(--t-base);
+  color: var(--texto-tenue);
+  margin-bottom: var(--e-4);
+}
+
+.panel__formulario {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--e-4);
 }
 
-.carga__operador label {
-  font-size: 12.5px;
+.panel__lista {
+  max-height: 280px;
+  overflow: auto;
+}
+
+/* ==========================================================================
+   Vista de revisión integrada
+   ========================================================================== */
+
+.revision-carga {
+  position: relative;
+}
+
+.revision-carga__acciones {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e-4);
+  flex-wrap: wrap;
+  margin-top: var(--e-5);
+}
+
+.revision-carga__descargas {
+  display: flex;
+  gap: var(--e-2);
+  flex-wrap: wrap;
+}
+
+.revision-carga__nota {
+  font-size: var(--t-sm);
   font-weight: 600;
+  color: var(--advertencia);
+  margin-top: var(--e-2);
+}
+
+/* Capa que bloquea la tabla mientras se recalcula */
+.capa-ocupada {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(2px);
+  border-radius: var(--radio);
+}
+
+.capa-ocupada__caja {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  padding: var(--e-3) var(--e-5);
+  background: var(--acento);
+  color: var(--on-acento);
+  border-radius: var(--radio-sm);
+  font-size: var(--t-base);
+  font-weight: 700;
+  box-shadow: var(--sombra-md);
+}
+
+.capa-ocupada__caja::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: var(--on-acento);
+  border-radius: 50%;
+  animation: girar 0.7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capa-ocupada__caja::before {
+    animation-duration: 1.4s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/* Celda del interruptor de pago no salarial */
+.interruptor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  cursor: pointer;
+  font-size: var(--t-sm);
   color: var(--texto-tenue);
 }
 
-.carga__operador select,
-.carga__operador button {
-  padding: 9px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--borde);
-  font-size: 13.5px;
-  background: var(--bg-elevada);
-  color: var(--texto);
+.interruptor input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--acento);
+  cursor: pointer;
 }
 
-.carga__operador button {
-  background: var(--acento);
-  color: #fff;
-  border: none;
-  font-weight: 600;
+.interruptor input:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
 }

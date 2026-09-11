@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import Aviso from '../../components/Aviso';
+import Selector from '../../components/ui/Selector';
+import BotonAccion from '../../components/ui/BotonAccion';
+import { IconoEditar, IconoExcel } from '../../components/iconos';
+import './PantallaRevision.css';
 
 export default function PantallaRevision() {
   const [cargas, setCargas] = useState([]);
   const [selectedCargaId, setSelectedCargaId] = useState('');
-  
+
   // States for filters
   const [filtroEmpresa, setFiltroEmpresa] = useState("TODAS");
   const [filtroPeriodo, setFiltroPeriodo] = useState("TODOS");
@@ -114,7 +119,7 @@ export default function PantallaRevision() {
       });
       const data = await res.json();
       if (data.status === 'success') {
-        setMensaje({ tipo: 'success', texto: "Cambios guardados con éxito." });
+        setMensaje({ tipo: 'exito', texto: "Cambios guardados con éxito." });
         // Refresh data
         const refreshResponse = await fetch(`/api/revision/${selectedCargaId}`);
         const freshData = await refreshResponse.json();
@@ -125,11 +130,11 @@ export default function PantallaRevision() {
           selectLineaForEdit(updated);
         }
       } else {
-        setMensaje({ tipo: 'error', texto: data.error || "Error al guardar." });
+        setMensaje({ tipo: 'peligro', texto: data.error || "Error al guardar." });
       }
     } catch (err) {
       console.error("Error al guardar:", err);
-      setMensaje({ tipo: 'error', texto: "Error de conexión." });
+      setMensaje({ tipo: 'peligro', texto: "Error de conexión." });
     } finally {
       setSaveLoading(false);
     }
@@ -145,7 +150,7 @@ export default function PantallaRevision() {
       });
       const data = await res.json();
       if (data.status === 'success') {
-        setMensaje({ tipo: 'success', texto: "¡Excel regenerado y descargado!" });
+        setMensaje({ tipo: 'exito', texto: "¡Excel regenerado y descargado!" });
         // Programmatic download to bypass popup blockers
         const downloadUrl = data.ruta_descarga;
         const link = document.createElement('a');
@@ -154,127 +159,109 @@ export default function PantallaRevision() {
         link.click();
         document.body.removeChild(link);
       } else {
-        setMensaje({ tipo: 'error', texto: data.error || "Error al regenerar." });
+        setMensaje({ tipo: 'peligro', texto: data.error || "Error al regenerar." });
       }
     } catch (err) {
       console.error(err);
-      setMensaje({ tipo: 'error', texto: "Error de conexión." });
+      setMensaje({ tipo: 'peligro', texto: "Error de conexión." });
     } finally {
       setExcelLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "'Outfit', sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem", marginBottom: "2rem", backgroundColor: "white", padding: "1.5rem", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+    <div className="pagina">
+      <header className="pagina__cabecera">
         <div>
-          <h2 style={{ margin: "0 0 0.5rem 0", fontSize: "20px", color: "#1E3A8A" }}>Revisar Cálculos</h2>
-          <p style={{ margin: 0, color: "#6B7280", fontSize: "14px" }}>
+          <h1 className="pagina__titulo">Revisar Cálculos</h1>
+          <p className="pagina__descripcion">
             Revisa y cambia los montos de la nómina si ves algo mal antes de armar el Excel.
           </p>
         </div>
+      </header>
 
-        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <label style={{ fontSize: "12px", color: "#4B5563", marginBottom: "4px", fontWeight: "600" }}>Filtrar por Empresa:</label>
-            <select
-              value={filtroEmpresa}
-              onChange={(e) => setFiltroEmpresa(e.target.value)}
-              style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #D1D5DB", outline: "none", backgroundColor: "white", fontSize: "13px", maxWidth: "200px" }}
-            >
-              <option value="TODAS">-- Todas las Empresas --</option>
-              {empresasUnicas.map(emp => (
-                <option key={emp} value={emp}>{emp}</option>
-              ))}
-            </select>
-          </div>
+      <div className="filtros">
+        <div className="campo">
+          <label className="campo__etiqueta" id="lbl-rev-empresa" htmlFor="rev-empresa">
+            Filtrar por empresa
+          </label>
+          <Selector
+            id="rev-empresa"
+            aria-labelledby="lbl-rev-empresa"
+            valor={filtroEmpresa}
+            onChange={setFiltroEmpresa}
+            opciones={[
+              { valor: 'TODAS', etiqueta: 'Todas las empresas' },
+              ...empresasUnicas.map(emp => ({ valor: emp, etiqueta: emp })),
+            ]}
+          />
+        </div>
 
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <label style={{ fontSize: "12px", color: "#4B5563", marginBottom: "4px", fontWeight: "600" }}>Filtrar por Periodo:</label>
-            <select
-              value={filtroPeriodo}
-              onChange={(e) => setFiltroPeriodo(e.target.value)}
-              style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #D1D5DB", outline: "none", backgroundColor: "white", fontSize: "13px", maxWidth: "150px" }}
-            >
-              <option value="TODOS">-- Todos los Meses --</option>
-              {periodosUnicos.map(per => (
-                <option key={per} value={per}>{per}</option>
-              ))}
-            </select>
-          </div>
+        <div className="campo">
+          <label className="campo__etiqueta" id="lbl-rev-periodo" htmlFor="rev-periodo">
+            Filtrar por periodo
+          </label>
+          <Selector
+            id="rev-periodo"
+            aria-labelledby="lbl-rev-periodo"
+            valor={filtroPeriodo}
+            onChange={setFiltroPeriodo}
+            opciones={[
+              { valor: 'TODOS', etiqueta: 'Todos los meses' },
+              ...periodosUnicos.map(per => ({ valor: per, etiqueta: per })),
+            ]}
+          />
+        </div>
 
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <label style={{ fontSize: "12px", color: "#4B5563", marginBottom: "4px", fontWeight: "600" }}>Archivo a Revisar:</label>
-            <select
-              value={selectedCargaId}
-              onChange={(e) => setSelectedCargaId(parseInt(e.target.value))}
-              style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #D1D5DB", outline: "none", backgroundColor: "white", fontSize: "13px", minWidth: "250px" }}
-              disabled={cargasFiltradas.length === 0}
-            >
-              {cargasFiltradas.length === 0 && <option value="">No hay archivos</option>}
-              {cargasFiltradas.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.periodo.replace("-", " ")} - {c.aportante?.razon_social || "Desconocido"} ({c.operador.toUpperCase()})
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="campo">
+          <label className="campo__etiqueta" id="lbl-rev-archivo" htmlFor="rev-archivo">
+            Archivo a revisar
+          </label>
+          <Selector
+            id="rev-archivo"
+            aria-labelledby="lbl-rev-archivo"
+            valor={selectedCargaId}
+            onChange={setSelectedCargaId}
+            disabled={cargasFiltradas.length === 0}
+            placeholder="No hay archivos"
+            opciones={cargasFiltradas.map(c => ({
+              valor: c.id,
+              etiqueta: `${c.periodo.replace("-", " ")} - ${c.aportante?.razon_social || "Desconocido"} (${c.operador.toUpperCase()})`,
+            }))}
+          />
         </div>
       </div>
 
-      {mensaje && (
-        <div style={{
-          padding: "1rem",
-          borderRadius: "8px",
-          marginBottom: "1.5rem",
-          backgroundColor: mensaje.tipo === 'success' ? '#ECFDF5' : '#FEF2F2',
-          border: `1px solid ${mensaje.tipo === 'success' ? '#10B981' : '#EF4444'}`,
-          color: mensaje.tipo === 'success' ? '#065F46' : '#991B1B',
-          fontSize: "14px",
-          fontWeight: "500"
-        }}>
-          {mensaje.texto}
-        </div>
-      )}
+      {mensaje && <Aviso tipo={mensaje.tipo}>{mensaje.texto}</Aviso>}
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "3rem", color: "#6B7280" }}>Cargando datos de revisión...</div>
+        <div className="cargando">Cargando datos de revisión...</div>
       ) : revisionData ? (
-        <div style={{ display: "grid", gridTemplateColumns: selectedLinea ? "1.2fr 1fr" : "1fr", gap: "2rem", alignItems: "start" }}>
-          
+        <div className={`revision${selectedLinea ? '' : ' revision--sin-editor'}`}>
           {/* Tabla de Trabajadores */}
-          <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "1.5rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <h2 style={{ fontSize: "16px", fontWeight: "700", margin: 0, color: "#1F2937" }}>
-                Trabajadores ({revisionData.lineas.length})
-              </h2>
+          <section className="tarjeta">
+            <div className="tarjeta__cabecera">
+              <h2>Trabajadores ({revisionData.lineas.length})</h2>
               <button
+                type="button"
+                className="boton boton--primario boton--sm"
                 onClick={handleRegenerarExcel}
                 disabled={excelLoading}
-                style={{
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "#2563EB",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  cursor: excelLoading ? "not-allowed" : "pointer"
-                }}
               >
+                <IconoExcel size={14} aria-hidden="true" />
                 {excelLoading ? "Generando..." : "Volver a generar y descargar Excel"}
               </button>
             </div>
-            
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+
+            <div className="tabla-envoltura tabla-envoltura--plana">
+              <table className="tabla">
                 <thead>
-                  <tr style={{ backgroundColor: "#F9FAFB", borderBottom: "1px solid #E5E7EB", textAlign: "left" }}>
-                    <th style={{ padding: "0.75rem" }}>Empleado</th>
-                    <th style={{ padding: "0.75rem" }}>Cédula</th>
-                    <th style={{ padding: "0.75rem" }}>Gasto</th>
-                    <th style={{ padding: "0.75rem" }}>Neto a pagar</th>
-                    <th style={{ padding: "0.75rem", textRight: "right" }}>Acción</th>
+                  <tr>
+                    <th>Empleado</th>
+                    <th>Cédula</th>
+                    <th>Gasto</th>
+                    <th className="tabla__num">Neto a pagar</th>
+                    <th className="tabla__acciones">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -283,42 +270,23 @@ export default function PantallaRevision() {
                     const valNeto = salNetoObj ? salNetoObj.valor_actual : 0;
                     const isSelected = selectedLinea && selectedLinea.linea_id === l.linea_id;
                     return (
-                      <tr
-                        key={l.linea_id}
-                        style={{
-                          borderBottom: "1px solid #F3F4F6",
-                          backgroundColor: isSelected ? "#F3F4F6" : "transparent"
-                        }}
-                      >
-                        <td style={{ padding: "0.75rem", fontWeight: "500" }}>{l.trabajador.nombre_completo}</td>
-                        <td style={{ padding: "0.75rem", color: "#4B5563" }}>{l.trabajador.numero_documento}</td>
-                        <td style={{ padding: "0.75rem" }}>
-                          <span style={{
-                            padding: "0.2rem 0.5rem",
-                            borderRadius: "4px",
-                            fontSize: "11px",
-                            fontWeight: "600",
-                            backgroundColor: l.trabajador.clase_gasto === "72" ? "#FEF3C7" : l.trabajador.clase_gasto === "52" ? "#E0F2FE" : "#F3F4F6",
-                            color: l.trabajador.clase_gasto === "72" ? "#92400E" : l.trabajador.clase_gasto === "52" ? "#0369A1" : "#374151"
-                          }}>
+                      <tr key={l.linea_id} className={isSelected ? 'revision__fila--activa' : undefined}>
+                        <td className="tabla__principal">{l.trabajador.nombre_completo}</td>
+                        <td className="num">{l.trabajador.numero_documento}</td>
+                        <td>
+                          <span className="insignia insignia--sin-punto">
                             {l.trabajador.clase_gasto}
                           </span>
                         </td>
-                        <td style={{ padding: "0.75rem", fontWeight: "600", color: "#059669" }}>
-                          ${valNeto.toLocaleString()}
-                        </td>
-                        <td style={{ padding: "0.75rem" }}>
+                        <td className="tabla__num">${valNeto.toLocaleString()}</td>
+                        <td className="tabla__acciones">
                           <button
+                            type="button"
+                            className="boton boton--sm"
                             onClick={() => selectLineaForEdit(l)}
-                            style={{
-                              padding: "0.3rem 0.6rem",
-                              backgroundColor: "transparent",
-                              border: "1px solid #D1D5DB",
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                              fontSize: "12px"
-                            }}
+                            aria-label={`Editar montos de ${l.trabajador.nombre_completo}`}
                           >
+                            <IconoEditar size={14} aria-hidden="true" />
                             Editar montos
                           </button>
                         </td>
@@ -328,95 +296,76 @@ export default function PantallaRevision() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
 
           {/* Formulario de Detalle y Edición */}
           {selectedLinea && (
-            <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "1.5rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "700", margin: "0 0 0.5rem 0", color: "#1F2937" }}>
-                Modificar montos: {selectedLinea.trabajador.nombre_completo}
-              </h3>
-              <p style={{ margin: "0 0 1.5rem 0", color: "#6B7280", fontSize: "13px" }}>
-                Escribe el nuevo valor sin decimales para corregirlo. Si lo dejas vacío, se usará el cálculo automático original.
-              </p>
+            <section className="tarjeta revision__editor">
+              <div className="tarjeta__cabecera">
+                <h2>Modificar montos</h2>
+              </div>
+              <div className="tarjeta__cuerpo">
+                <p className="pagina__descripcion">
+                  <strong>{selectedLinea.trabajador.nombre_completo}</strong>
+                </p>
+                <p className="campo__ayuda">
+                  Escribe el nuevo valor sin decimales para corregirlo. Si lo dejas vacío,
+                  se usará el cálculo automático original.
+                </p>
 
-              <form onSubmit={handleSaveEdiciones}>
-                <div style={{ maxHeight: "400px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.75rem", paddingRight: "0.5rem", marginBottom: "1.5rem" }}>
-                  {Object.keys(selectedLinea.valores).map(key => {
-                    const valObj = selectedLinea.valores[key];
-                    return (
-                      <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F3F4F6", paddingBottom: "0.5rem" }}>
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontSize: "12px", fontWeight: "600", color: "#374151", textTransform: "uppercase" }}>
-                            {key.replace(/_/g, ' ')}
-                          </span>
-                          <div style={{ fontSize: "11px", color: "#9CA3AF" }}>
-                            Cálculo automático: ${valObj.valor_original.toLocaleString()}
+                <form onSubmit={handleSaveEdiciones}>
+                  <div className="montos">
+                    {Object.keys(selectedLinea.valores).map(key => {
+                      const valObj = selectedLinea.valores[key];
+                      const idCampo = `monto-${valObj.id}`;
+                      return (
+                        <div key={key} className="monto">
+                          <div className="monto__datos">
+                            <label className="monto__concepto" htmlFor={idCampo}>
+                              {key.replace(/_/g, ' ')}
+                            </label>
+                            <span className="monto__original">
+                              Cálculo automático: ${valObj.valor_original.toLocaleString()}
+                            </span>
                           </div>
+                          <input
+                            id={idCampo}
+                            type="number"
+                            className="control control--sm control--num monto__entrada"
+                            placeholder={valObj.valor_original.toString()}
+                            value={editedValores[valObj.id] || ''}
+                            onChange={(e) => setEditedValores({
+                              ...editedValores,
+                              [valObj.id]: e.target.value
+                            })}
+                          />
                         </div>
-                        <input
-                          type="number"
-                          placeholder={valObj.valor_original.toString()}
-                          value={editedValores[valObj.id] || ''}
-                          onChange={(e) => setEditedValores({
-                            ...editedValores,
-                            [valObj.id]: e.target.value
-                          })}
-                          style={{
-                            width: "120px",
-                            padding: "0.4rem",
-                            border: "1px solid #D1D5DB",
-                            borderRadius: "6px",
-                            fontSize: "13px",
-                            textAlign: "right"
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
 
-                <div style={{ display: "flex", gap: "1rem" }}>
-                  <button
-                    type="submit"
-                    disabled={saveLoading}
-                    style={{
-                      flex: 1,
-                      padding: "0.7rem",
-                      backgroundColor: "#059669",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      fontWeight: "600",
-                      cursor: saveLoading ? "not-allowed" : "pointer",
-                      fontSize: "14px"
-                    }}
-                  >
-                    {saveLoading ? "Guardando..." : "Guardar cambios"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedLinea(null)}
-                    style={{
-                      padding: "0.7rem 1rem",
-                      backgroundColor: "transparent",
-                      border: "1px solid #D1D5DB",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      color: "#4B5563"
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            </div>
+                  <div className="revision__botones">
+                    <BotonAccion type="submit" disabled={saveLoading}>
+                      {saveLoading ? "Guardando..." : "Guardar cambios"}
+                    </BotonAccion>
+                    <button
+                      type="button"
+                      className="boton"
+                      onClick={() => setSelectedLinea(null)}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </section>
           )}
-
         </div>
       ) : (
-        <div style={{ textAlign: "center", padding: "3rem", color: "#6B7280" }}>Aún no se han subido planillas al sistema.</div>
+        <div className="vacio">
+          <span className="vacio__titulo">Aún no hay planillas</span>
+          Sube una planilla PILA desde "Nueva carga" para poder revisar sus cálculos.
+        </div>
       )}
     </div>
   );

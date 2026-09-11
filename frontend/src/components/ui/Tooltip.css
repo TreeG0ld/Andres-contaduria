@@ -1,0 +1,47 @@
+/* El envoltorio recibe el hover, así funciona también sobre controles
+   bloqueados, que por sí solos no emiten eventos de ratón. */
+.tooltip-ancla {
+  display: inline-flex;
+  position: relative;
+}
+
+.tooltip-ancla--bloque {
+  display: flex;
+  width: 100%;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 120;
+  max-width: 280px;
+  padding: var(--e-2) var(--e-3);
+  background: var(--acento);
+  color: var(--on-acento);
+  border-radius: var(--radio-sm);
+  box-shadow: var(--sombra-md);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  pointer-events: none;
+}
+
+.tooltip__punta {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--acento);
+  rotate: 45deg;
+}
+
+.tooltip--arriba .tooltip__punta {
+  bottom: -4px;
+  left: 50%;
+  margin-left: -4px;
+}
+
+.tooltip--abajo .tooltip__punta {
+  top: -4px;
+  left: 50%;
+  margin-left: -4px;
+}

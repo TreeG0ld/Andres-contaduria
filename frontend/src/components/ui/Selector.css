@@ -1,0 +1,179 @@
+/* ==========================================================================
+   Selector — reemplazo del <select> nativo
+   El disparador imita a .control para que forme fila con los demás campos;
+   el menú se dibuja en un portal, así que ninguna tabla con overflow lo corta.
+   La apertura (altura y escalonado) la maneja motion desde Selector.jsx.
+   ========================================================================== */
+
+.selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  width: 100%;
+  min-height: 40px;
+  padding: 9px var(--e-3);
+  font: inherit;
+  font-size: var(--t-base);
+  font-weight: 400;
+  text-align: left;
+  color: var(--texto);
+  background: var(--bg-elevada);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-sm);
+  cursor: pointer;
+  transition: border-color var(--transicion), box-shadow var(--transicion),
+    background var(--transicion);
+}
+
+.selector:hover:not(:disabled) {
+  border-color: var(--texto-sutil);
+}
+
+.selector:focus-visible {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.1);
+}
+
+.selector--abierto {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.1);
+}
+
+.selector:disabled {
+  background: var(--bg-hover);
+  color: var(--texto-sutil);
+  cursor: not-allowed;
+}
+
+.selector__valor {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selector__valor--vacio {
+  color: var(--texto-sutil);
+}
+
+.selector__flecha {
+  flex-shrink: 0;
+  color: var(--texto-tenue);
+  transition: transform 0.2s ease;
+}
+
+.selector--abierto .selector__flecha {
+  transform: rotate(180deg);
+}
+
+/* Variante compacta, para celdas de tabla */
+.selector--sm {
+  min-height: 32px;
+  padding: 5px var(--e-2);
+  font-size: var(--t-sm);
+}
+
+/* ==========================================================================
+   Panel desplegable (en portal, posición fija)
+   overflow:hidden es lo que deja a motion animar la altura sin que el
+   contenido se desborde durante la apertura.
+   ========================================================================== */
+
+.selector-menu {
+  position: fixed;
+  z-index: 60;
+  overflow: hidden;
+  background: var(--bg-elevada);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-md);
+}
+
+.selector-menu__lista {
+  margin: 0;
+  padding: var(--e-1);
+  list-style: none;
+  overflow-y: auto;
+}
+
+.selector-opcion {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  padding: 9px var(--e-3);
+  border-radius: var(--radio-sm);
+  font-size: var(--t-base);
+  color: var(--texto-tenue);
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--transicion);
+}
+
+.selector-opcion--activa {
+  color: var(--texto);
+}
+
+.selector-opcion--elegida {
+  color: var(--texto);
+  font-weight: 700;
+}
+
+/* Resaltado que se desliza entre opciones (motion, layoutId) */
+.selector-opcion__fondo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--radio-sm);
+  background: var(--acento-suave);
+}
+
+/* Barra izquierda, del mismo lenguaje que el tubo de la barra lateral */
+.selector-opcion__barra {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  translate: 0 -50%;
+  width: 3px;
+  height: 18px;
+  border-radius: var(--radio-pill);
+  background: var(--acento);
+}
+
+.selector-opcion__etiqueta {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selector-opcion__check {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  opacity: 0;
+  color: var(--acento);
+}
+
+.selector-opcion--elegida .selector-opcion__check {
+  opacity: 1;
+}
+
+.selector-opcion--deshabilitada {
+  color: var(--texto-sutil);
+  cursor: not-allowed;
+}
+
+.selector-menu--sm .selector-opcion {
+  padding: 6px var(--e-2);
+  font-size: var(--t-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selector__flecha {
+    transition: none;
+  }
+}

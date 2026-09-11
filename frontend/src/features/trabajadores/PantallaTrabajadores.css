@@ -1,0 +1,35 @@
+.trabajadores__buscador {
+  position: relative;
+  width: min(320px, 100%);
+}
+
+.trabajadores__buscador .control {
+  padding-left: 36px;
+}
+
+.trabajadores__buscador svg {
+  position: absolute;
+  left: var(--e-3);
+  top: 50%;
+  translate: 0 -50%;
+  color: var(--texto-sutil);
+  pointer-events: none;
+}
+
+.trabajadores__conteo {
+  font-size: var(--t-sm);
+  color: var(--texto-tenue);
+  margin-bottom: var(--e-3);
+}
+
+.trabajadores__nombre {
+  min-width: 260px;
+}
+
+.trabajadores__doc {
+  font-variant-numeric: tabular-nums;
+}
+
+.trabajadores__clase {
+  min-width: 250px;
+}

@@ -3,6 +3,7 @@
   --bg: #fafafa;
   --bg-elevada: #ffffff;
   --bg-hover: #f4f4f5;
+  --bg-sutil: #fafafa;
   --texto: #18181b;
   --texto-tenue: #71717a;
   --texto-sutil: #a1a1aa;
@@ -19,10 +20,19 @@
      siempre va acompañado de texto/ícono), pero desaturado para que no rompa lo sobrio */
   --exito: #15803d;
   --exito-suave: #f0f5f1;
+  --exito-borde: #c3dbca;
   --advertencia: #b45309;
   --advertencia-suave: #f6f1e9;
+  --advertencia-borde: #e4d5bd;
   --peligro: #b91c1c;
   --peligro-suave: #f6efee;
+  --peligro-borde: #e5c9c7;
+  /* El rojo de arriba está calibrado para fondo claro; sobre negro queda
+     apagado, así que las superficies oscuras usan este. */
+  --peligro-en-oscuro: #f87171;
+  --info: #3f3f46;
+  --info-suave: #f4f4f5;
+  --info-borde: #dcdce0;
 
   /* Sidebar: negro real, no navy */
   --sidebar-bg: #0a0a0b;
@@ -33,13 +43,36 @@
 
   --radio: 10px;
   --radio-sm: 8px;
+  --radio-pill: 999px;
   --sombra: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.07);
   --sombra-md: 0 8px 24px rgba(0, 0, 0, 0.1);
 
-  --fuente-marca: "Poppins", "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
-  --fuente-cuerpo: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  /* Escala modular de texto — evita tamaños arbitrarios */
+  --t-xs: 11.5px;
+  --t-sm: 12.5px;
+  --t-base: 13.5px;
+  --t-md: 15px;
+  --t-lg: 17px;
+  --t-xl: 22px;
+  --t-2xl: 28px;
 
-  font: 15px/1.55 var(--fuente-cuerpo);
+  /* Escala de espaciado — densidad de panel de trabajo */
+  --e-1: 4px;
+  --e-2: 8px;
+  --e-3: 12px;
+  --e-4: 16px;
+  --e-5: 24px;
+  --e-6: 32px;
+
+  --transicion: 0.15s ease;
+
+  /* Nunito en toda la plataforma: cuerpo y titulares comparten familia,
+     la jerarquía la marca el peso y el tamaño, no la fuente */
+  --fuente-marca: "Nunito", system-ui, "Segoe UI", Roboto, sans-serif;
+  --fuente-cuerpo: "Nunito", system-ui, "Segoe UI", Roboto, sans-serif;
+  --fuente-mono: ui-monospace, "Cascadia Code", "Consolas", monospace;
+
+  font: var(--t-md) / 1.55 var(--fuente-cuerpo);
   color: var(--texto);
   background: var(--bg);
   font-synthesis: none;
@@ -64,8 +97,8 @@ h1,
 h2,
 h3 {
   font-family: var(--fuente-marca);
-  font-weight: 700;
-  letter-spacing: -0.005em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
@@ -81,6 +114,11 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.mono {
+  font-family: var(--fuente-mono);
+  font-size: var(--t-sm);
+}
+
 /* Foco visible y consistente con la paleta, nunca eliminado */
 :focus-visible {
   outline: 2px solid var(--acento);
@@ -92,6 +130,527 @@ button {
   outline-color: var(--sidebar-texto-activo);
 }
 
+/* ==========================================================================
+   Estructura de página
+   El padding exterior lo pone .contenido (Layout.css); las pantallas no
+   vuelven a padear, solo limitan el ancho de lectura.
+   ========================================================================== */
+
+.pagina {
+  max-width: 1180px;
+}
+
+.pagina--estrecha {
+  max-width: 860px;
+}
+
+.pagina__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--e-5);
+}
+
+.pagina__titulo {
+  font-size: var(--t-xl);
+  line-height: 1.25;
+}
+
+.pagina__descripcion {
+  color: var(--texto-tenue);
+  font-size: var(--t-base);
+  margin-top: var(--e-1);
+  max-width: 70ch;
+}
+
+.pagina__acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  flex-shrink: 0;
+}
+
+.seccion {
+  margin-top: var(--e-5);
+}
+
+.seccion__titulo {
+  font-size: var(--t-lg);
+  font-weight: 700;
+  margin-bottom: var(--e-3);
+}
+
+/* ==========================================================================
+   Tarjetas
+   ========================================================================== */
+
+.tarjeta {
+  background: var(--bg-elevada);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.tarjeta__cuerpo {
+  padding: var(--e-5);
+}
+
+.tarjeta__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  flex-wrap: wrap;
+  padding: var(--e-4) var(--e-5);
+  border-bottom: 1px solid var(--borde);
+}
+
+.tarjeta__cabecera h2 {
+  font-size: var(--t-md);
+  font-weight: 700;
+}
+
+.tarjeta__pie {
+  padding: var(--e-4) var(--e-5);
+  border-top: 1px solid var(--borde);
+  background: var(--bg-sutil);
+  border-radius: 0 0 var(--radio) var(--radio);
+}
+
+/* ==========================================================================
+   Formularios
+   ========================================================================== */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  min-width: 0;
+}
+
+.campo__etiqueta {
+  font-size: var(--t-base);
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.campo__ayuda {
+  font-size: var(--t-sm);
+  color: var(--texto-tenue);
+}
+
+.campo__error {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--peligro);
+}
+
+.control {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px var(--e-3);
+  font: inherit;
+  font-size: var(--t-base);
+  color: var(--texto);
+  background: var(--bg-elevada);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-sm);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.control:hover:not(:disabled) {
+  border-color: var(--texto-sutil);
+}
+
+.control:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.1);
+}
+
+.control:disabled {
+  background: var(--bg-hover);
+  color: var(--texto-sutil);
+  cursor: not-allowed;
+}
+
+.control::placeholder {
+  color: var(--texto-sutil);
+}
+
+select.control {
+  cursor: pointer;
+  appearance: none;
+  padding-right: var(--e-6);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--e-3) center;
+}
+
+.control--sm {
+  min-height: 32px;
+  padding: 5px var(--e-2);
+  font-size: var(--t-sm);
+}
+
+select.control--sm {
+  padding-right: var(--e-5);
+  background-position: right var(--e-2) center;
+}
+
+.control--num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Barra de filtros: fila de campos que se apila sola en pantallas chicas */
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--e-3);
+  margin-bottom: var(--e-4);
+}
+
+/* ==========================================================================
+   Botones
+   ========================================================================== */
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+  min-height: 40px;
+  padding: 10px var(--e-4);
+  font-size: var(--t-base);
+  font-weight: 700;
+  font-family: var(--fuente-cuerpo);
+  color: var(--texto);
+  background: var(--bg-elevada);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-sm);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--transicion), border-color var(--transicion),
+    color var(--transicion);
+}
+
+.boton:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--texto-sutil);
+}
+
+.boton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Bloqueado pero alcanzable: se ve inactivo y no actúa, pero conserva foco y
+   hover para poder explicar con un tooltip qué falta para desbloquearlo. */
+.boton--bloqueado,
+.boton--bloqueado:hover {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--acento);
+  border-color: var(--acento);
+}
+
+.boton--primario {
+  background: var(--acento);
+  border-color: var(--acento);
+  color: var(--on-acento);
+}
+
+.boton--primario:hover:not(:disabled) {
+  background: var(--acento-hover);
+  border-color: var(--acento-hover);
+}
+
+.boton--peligro {
+  color: var(--peligro);
+  border-color: var(--peligro-borde);
+}
+
+.boton--peligro:hover:not(:disabled) {
+  background: var(--peligro-suave);
+  border-color: var(--peligro);
+}
+
+.boton--fantasma {
+  background: transparent;
+  border-color: transparent;
+  color: var(--texto-tenue);
+}
+
+.boton--fantasma:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: transparent;
+  color: var(--texto);
+}
+
+/* Fantasma + peligro: acción destructiva discreta (p. ej. "Quitar").
+   En reposo es gris; al pasar el cursor solo se tiñe el texto y el ícono,
+   el fondo sigue siendo el gris neutro del fantasma. */
+.boton--fantasma.boton--peligro {
+  color: var(--texto-tenue);
+  border-color: transparent;
+}
+
+.boton--fantasma.boton--peligro:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: transparent;
+  color: var(--peligro);
+}
+
+.boton--sm {
+  min-height: 32px;
+  padding: 6px var(--e-3);
+  font-size: var(--t-sm);
+}
+
+.boton--bloque {
+  width: 100%;
+}
+
+/* ==========================================================================
+   Insignias de estado
+   El color nunca va solo: cada insignia lleva su punto y su texto.
+   ========================================================================== */
+
+.insignia {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radio-pill);
+  border: 1px solid var(--info-borde);
+  background: var(--info-suave);
+  color: var(--info);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.insignia::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.insignia--sin-punto::before {
+  display: none;
+}
+
+.insignia--exito {
+  background: var(--exito-suave);
+  border-color: var(--exito-borde);
+  color: var(--exito);
+}
+
+.insignia--advertencia {
+  background: var(--advertencia-suave);
+  border-color: var(--advertencia-borde);
+  color: var(--advertencia);
+}
+
+.insignia--peligro {
+  background: var(--peligro-suave);
+  border-color: var(--peligro-borde);
+  color: var(--peligro);
+}
+
+/* ==========================================================================
+   Avisos
+   ========================================================================== */
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--info-borde);
+  background: var(--info-suave);
+  color: var(--texto);
+  border-radius: var(--radio-sm);
+  font-size: var(--t-base);
+  margin-bottom: var(--e-4);
+}
+
+.aviso__icono {
+  flex-shrink: 0;
+  display: inline-flex;
+  margin-top: 1px;
+}
+
+.aviso__cuerpo {
+  min-width: 0;
+}
+
+.aviso__titulo {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.aviso--exito {
+  background: var(--exito-suave);
+  border-color: var(--exito-borde);
+  color: var(--exito);
+}
+
+.aviso--advertencia {
+  background: var(--advertencia-suave);
+  border-color: var(--advertencia-borde);
+  color: var(--advertencia);
+}
+
+.aviso--peligro {
+  background: var(--peligro-suave);
+  border-color: var(--peligro-borde);
+  color: var(--peligro);
+}
+
+/* ==========================================================================
+   Tablas de datos
+   Siempre dentro de .tabla-envoltura para que no rompan el layout en móvil.
+   ========================================================================== */
+
+.tabla-envoltura {
+  overflow-x: auto;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--bg-elevada);
+  box-shadow: var(--sombra);
+}
+
+/* Cuando la tabla ya va dentro de una .tarjeta, la envoltura no repite
+   borde ni sombra: solo aporta el scroll horizontal. */
+.tabla-envoltura--plana {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-base);
+}
+
+.tabla th {
+  text-align: left;
+  font-weight: 700;
+  font-size: var(--t-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+  background: var(--bg-sutil);
+  padding: var(--e-3) var(--e-4);
+  border-bottom: 1px solid var(--borde);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.tabla td {
+  padding: var(--e-3) var(--e-4);
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto-tenue);
+  vertical-align: middle;
+}
+
+.tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tabla tbody tr {
+  transition: background var(--transicion);
+}
+
+.tabla tbody tr:hover {
+  background: var(--bg-sutil);
+}
+
+.tabla__principal {
+  color: var(--texto);
+  font-weight: 700;
+}
+
+.tabla__num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--texto);
+}
+
+.tabla__acciones {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tabla__vacio {
+  text-align: center;
+  padding: var(--e-6) var(--e-4) !important;
+  color: var(--texto-sutil);
+}
+
+/* ==========================================================================
+   Estados: vacío, carga
+   ========================================================================== */
+
+.vacio {
+  background: var(--bg-elevada);
+  border: 1px dashed var(--borde-fuerte);
+  border-radius: var(--radio);
+  padding: var(--e-6);
+  text-align: center;
+  color: var(--texto-tenue);
+  font-size: var(--t-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+.vacio__titulo {
+  font-weight: 700;
+  color: var(--texto);
+  font-size: var(--t-md);
+}
+
+.cargando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+  padding: var(--e-6);
+  color: var(--texto-tenue);
+  font-size: var(--t-base);
+}
+
+.cargando::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--borde-fuerte);
+  border-top-color: var(--texto-tenue);
+  border-radius: 50%;
+  animation: girar 0.7s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -100,5 +659,11 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* El spinner sí necesita girar: se frena, no se congela */
+  .cargando::before {
+    animation-duration: 1.4s !important;
+    animation-iteration-count: infinite !important;
   }
 }

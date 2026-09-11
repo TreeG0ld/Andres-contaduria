@@ -1,0 +1,113 @@
+/* ==========================================================================
+   Modal
+   La entrada y la salida las anima motion desde Modal.jsx; aquí vive todo lo
+   que no depende del estado.
+   ========================================================================== */
+
+.modal-capa {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--e-4);
+}
+
+.modal-fondo {
+  position: absolute;
+  inset: 0;
+  background: rgba(24, 24, 27, 0.45);
+  backdrop-filter: blur(3px);
+}
+
+.modal {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100vh - var(--e-6));
+  background: var(--bg-elevada);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+}
+
+.modal--ancho {
+  max-width: 760px;
+}
+
+/* Cabecera en negro, del mismo tono que la barra lateral: ancla el diálogo
+   al lenguaje de la app y separa con claridad el título del formulario. */
+.modal__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-3);
+  padding: var(--e-4) var(--e-5);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-texto-activo);
+}
+
+.modal__titulo {
+  font-size: var(--t-lg);
+  font-weight: 800;
+  color: var(--sidebar-texto-activo);
+}
+
+.modal__descripcion {
+  font-size: var(--t-sm);
+  color: var(--sidebar-texto);
+  margin-top: 2px;
+}
+
+.modal__cerrar {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--sidebar-texto);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radio-sm);
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion);
+}
+
+.modal__cerrar:hover {
+  background: rgba(248, 113, 113, 0.14);
+  color: var(--peligro-en-oscuro);
+}
+
+.modal__cerrar:focus-visible {
+  outline-color: var(--sidebar-texto-activo);
+}
+
+/* Único tramo con scroll: la cabecera y el pie quedan siempre visibles */
+.modal__cuerpo {
+  padding: var(--e-5);
+  overflow-y: auto;
+}
+
+.modal__pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--e-2);
+  padding: var(--e-4) var(--e-5);
+  border-top: 1px solid var(--borde);
+  background: var(--bg-sutil);
+}
+
+@media (max-width: 560px) {
+  .modal__pie {
+    flex-direction: column-reverse;
+  }
+  .modal__pie .boton {
+    width: 100%;
+  }
+}

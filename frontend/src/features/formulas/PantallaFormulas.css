@@ -1,0 +1,42 @@
+.formulas__orden {
+  width: 64px;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-sutil);
+  font-weight: 700;
+}
+
+.formulas__celda {
+  width: 110px;
+  font-family: var(--fuente-mono);
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.formulas__concepto {
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.formulas__expresion {
+  font-family: var(--fuente-mono);
+  font-size: var(--t-sm);
+  color: var(--texto-tenue);
+}
+
+/* Fila que se está editando en el modal */
+.formulas__fila--activa {
+  background: var(--acento-suave);
+}
+
+.formulas__fila--activa td {
+  color: var(--texto);
+}
+
+.formulas__ayuda code {
+  font-family: var(--fuente-mono);
+  font-size: 0.95em;
+  background: var(--acento-suave);
+  border: 1px solid var(--borde);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
