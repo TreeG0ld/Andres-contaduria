@@ -11,7 +11,7 @@
   align-items: center;
   gap: 9px;
   min-height: 44px;
-  padding: 9px 10px;
+  padding: 9px 8px;
   border-radius: var(--radio-sm);
   color: var(--sidebar-texto);
   text-decoration: none;

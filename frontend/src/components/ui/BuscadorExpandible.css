@@ -1,0 +1,88 @@
+/* ==========================================================================
+   Buscador expandible
+   En reposo es solo la lupa; al pasar el cursor o al enfocarlo se abre en
+   barra. El <input> nunca sale del DOM —queda recortado—, así que el
+   tabulador lo alcanza y al enfocarlo la barra se abre sola.
+   ========================================================================== */
+
+/* Plegado va en negro: sobre el fondo casi blanco de la página, un botón
+   claro con borde fino desaparecía. Al abrirse pasa a campo claro. */
+.buscador {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  max-width: 100%;
+  background: var(--acento);
+  border: 1px solid var(--acento);
+  border-radius: var(--radio-pill);
+  overflow: hidden;
+  transition: background var(--transicion), border-color var(--transicion),
+    box-shadow var(--transicion);
+}
+
+.buscador:hover {
+  box-shadow: var(--sombra-md);
+}
+
+.buscador--abierto {
+  background: var(--bg-elevada);
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.1);
+}
+
+.buscador__lupa {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  padding: 0;
+  color: var(--on-acento);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color var(--transicion);
+}
+
+.buscador--abierto .buscador__lupa {
+  color: var(--texto);
+}
+
+.buscador__campo {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 var(--e-2) 0 0;
+  font: inherit;
+  font-size: var(--t-base);
+  color: var(--texto);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.buscador__campo::placeholder {
+  color: var(--texto-sutil);
+}
+
+/* El aspa no ocupa sitio mientras no haya texto */
+.buscador__limpiar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  margin-right: 5px;
+  padding: 0;
+  color: var(--texto-tenue);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion);
+}
+
+.buscador__limpiar:hover {
+  background: var(--bg-hover);
+  color: var(--peligro);
+}

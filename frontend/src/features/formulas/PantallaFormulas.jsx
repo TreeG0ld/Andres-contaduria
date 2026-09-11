@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Aviso from '../../components/Aviso';
 import Modal from '../../components/ui/Modal';
+import Toast from '../../components/ui/Toast';
 import BotonAccion from '../../components/ui/BotonAccion';
 import { IconoEditar } from '../../components/iconos';
 import './PantallaFormulas.css';
@@ -13,7 +14,11 @@ export default function PantallaFormulas() {
   const [etiqueta, setEtiqueta] = useState('');
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [mensaje, setMensaje] = useState(null);
+  // El error vive dentro del modal: si se dibujara en la página quedaría
+  // detrás del diálogo y nadie llegaría a leerlo.
+  const [errorModal, setErrorModal] = useState(null);
+  const [errorCarga, setErrorCarga] = useState(null);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchFormulas();
@@ -29,6 +34,7 @@ export default function PantallaFormulas() {
       })
       .catch(err => {
         console.error("Error al cargar fórmulas:", err);
+        setErrorCarga("No se pudieron cargar las fórmulas. Revisa la conexión con el servidor.");
         setLoading(false);
       });
   };
@@ -37,7 +43,7 @@ export default function PantallaFormulas() {
     setSelectedFormula(f);
     setExpresion(f.expresion);
     setEtiqueta(f.etiqueta);
-    setMensaje(null);
+    setErrorModal(null);
     setModalAbierto(true);
   };
 
@@ -45,7 +51,7 @@ export default function PantallaFormulas() {
     e.preventDefault();
     if (!selectedFormula) return;
     setSaveLoading(true);
-    setMensaje(null);
+    setErrorModal(null);
 
     try {
       const response = await fetch(`/api/formulas/${selectedFormula.id}`, {
@@ -55,15 +61,16 @@ export default function PantallaFormulas() {
       });
       const data = await response.json();
       if (data.status === 'success') {
-        setMensaje({ tipo: 'exito', texto: "¡Listo! Fórmula guardada." });
         setFormulas(formulas.map(f => f.id === selectedFormula.id ? { ...f, expresion, etiqueta } : f));
         setModalAbierto(false);
+        setToast(`Fórmula ${selectedFormula.columna} guardada`);
       } else {
-        setMensaje({ tipo: 'peligro', texto: data.error || "Error al actualizar." });
+        // El modal sigue abierto: el error se lee junto al campo que lo causó
+        setErrorModal(data.error || "Error al actualizar.");
       }
     } catch (err) {
       console.error(err);
-      setMensaje({ tipo: 'peligro', texto: "Error de conexión." });
+      setErrorModal("Error de conexión.");
     } finally {
       setSaveLoading(false);
     }
@@ -80,7 +87,7 @@ export default function PantallaFormulas() {
         </div>
       </header>
 
-      {mensaje && <Aviso tipo={mensaje.tipo}>{mensaje.texto}</Aviso>}
+      {errorCarga && <Aviso tipo="peligro">{errorCarga}</Aviso>}
 
       {loading ? (
         <div className="cargando">Cargando fórmulas...</div>
@@ -88,7 +95,7 @@ export default function PantallaFormulas() {
         <section className="tarjeta">
           <div className="tarjeta__cabecera">
             <h2>Orden de las fórmulas</h2>
-            <span className="campo__ayuda">{formulas.length} reglas</span>
+            <span className="tarjeta__conteo">{formulas.length} reglas</span>
           </div>
           <div className="tabla-envoltura tabla-envoltura--plana">
             <table className="tabla">
@@ -139,6 +146,8 @@ export default function PantallaFormulas() {
       >
         <form onSubmit={handleUpdateFormula}>
           <div className="modal__cuerpo panel__formulario">
+            {errorModal && <Aviso tipo="peligro">{errorModal}</Aviso>}
+
             <div className="campo">
               <label className="campo__etiqueta" htmlFor="etiqueta-formula">
                 Nombre descriptivo
@@ -166,13 +175,29 @@ export default function PantallaFormulas() {
                 aria-describedby="ayuda-formula"
                 required
               />
-              <small className="campo__ayuda formulas__ayuda" id="ayuda-formula">
-                Usa celdas de salida (ej: <code>V2</code>, <code>W5</code>) y variables de
-                entrada entre corchetes (ej: <code>[IBC Pensión]</code>).
-                <br />
-                Ejemplo: <code>REDONDEAR.MENOS(V2 * 40%; -3)</code> o{' '}
-                <code>V2 + V3 + V4 - W5 - W6</code>.
-              </small>
+              <div className="ayuda-formula" id="ayuda-formula">
+                <div className="ayuda-formula__fila">
+                  <span className="ayuda-formula__clave">Celdas de salida</span>
+                  <span className="ayuda-formula__fichas">
+                    <code>V2</code>
+                    <code>W5</code>
+                  </span>
+                </div>
+                <div className="ayuda-formula__fila">
+                  <span className="ayuda-formula__clave">Variables de entrada</span>
+                  <span className="ayuda-formula__fichas">
+                    <code>[IBC Pensión]</code>
+                    <code>[Días Caja]</code>
+                  </span>
+                </div>
+                <div className="ayuda-formula__fila">
+                  <span className="ayuda-formula__clave">Ejemplos</span>
+                  <span className="ayuda-formula__fichas">
+                    <code>REDONDEAR.MENOS(V2 * 40%; -3)</code>
+                    <code>V2 + V3 + V4 - W5 - W6</code>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -190,6 +215,12 @@ export default function PantallaFormulas() {
           </div>
         </form>
       </Modal>
+
+      <Toast
+        abierto={Boolean(toast)}
+        mensaje={toast}
+        onCerrar={() => setToast(null)}
+      />
     </div>
   );
 }

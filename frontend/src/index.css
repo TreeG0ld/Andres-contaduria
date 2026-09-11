@@ -18,15 +18,15 @@
 
   /* Color funcional — se conserva por accesibilidad (el color nunca es la única señal,
      siempre va acompañado de texto/ícono), pero desaturado para que no rompa lo sobrio */
-  --exito: #15803d;
-  --exito-suave: #f0f5f1;
-  --exito-borde: #c3dbca;
-  --advertencia: #b45309;
-  --advertencia-suave: #f6f1e9;
-  --advertencia-borde: #e4d5bd;
-  --peligro: #b91c1c;
-  --peligro-suave: #f6efee;
-  --peligro-borde: #e5c9c7;
+  --exito: #067647;
+  --exito-suave: #ecfdf3;
+  --exito-borde: #a6f4c5;
+  --advertencia: #b54708;
+  --advertencia-suave: #fffaeb;
+  --advertencia-borde: #fedf89;
+  --peligro: #b42318;
+  --peligro-suave: #fef3f2;
+  --peligro-borde: #fecdca;
   /* El rojo de arriba está calibrado para fondo claro; sobre negro queda
      apagado, así que las superficies oscuras usan este. */
   --peligro-en-oscuro: #f87171;
@@ -54,7 +54,6 @@
   --t-md: 15px;
   --t-lg: 17px;
   --t-xl: 22px;
-  --t-2xl: 28px;
 
   /* Escala de espaciado — densidad de panel de trabajo */
   --e-1: 4px;
@@ -114,11 +113,6 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-.mono {
-  font-family: var(--fuente-mono);
-  font-size: var(--t-sm);
-}
-
 /* Foco visible y consistente con la paleta, nunca eliminado */
 :focus-visible {
   outline: 2px solid var(--acento);
@@ -138,10 +132,6 @@ button {
 
 .pagina {
   max-width: 1180px;
-}
-
-.pagina--estrecha {
-  max-width: 860px;
 }
 
 .pagina__cabecera {
@@ -170,16 +160,6 @@ button {
   align-items: center;
   gap: var(--e-2);
   flex-shrink: 0;
-}
-
-.seccion {
-  margin-top: var(--e-5);
-}
-
-.seccion__titulo {
-  font-size: var(--t-lg);
-  font-weight: 700;
-  margin-bottom: var(--e-3);
 }
 
 /* ==========================================================================
@@ -212,11 +192,13 @@ button {
   font-weight: 700;
 }
 
-.tarjeta__pie {
-  padding: var(--e-4) var(--e-5);
-  border-top: 1px solid var(--borde);
-  background: var(--bg-sutil);
-  border-radius: 0 0 var(--radio) var(--radio);
+/* Contador de la cabecera: dato, no nota al pie — por eso va en negrita y en
+   tinta, no en el gris tenue de los textos de ayuda. */
+.tarjeta__conteo {
+  font-size: var(--t-base);
+  font-weight: 800;
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ==========================================================================
@@ -239,12 +221,6 @@ button {
 .campo__ayuda {
   font-size: var(--t-sm);
   color: var(--texto-tenue);
-}
-
-.campo__error {
-  font-size: var(--t-sm);
-  font-weight: 600;
-  color: var(--peligro);
 }
 
 .control {
@@ -280,24 +256,10 @@ button {
   color: var(--texto-sutil);
 }
 
-select.control {
-  cursor: pointer;
-  appearance: none;
-  padding-right: var(--e-6);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right var(--e-3) center;
-}
-
 .control--sm {
   min-height: 32px;
   padding: 5px var(--e-2);
   font-size: var(--t-sm);
-}
-
-select.control--sm {
-  padding-right: var(--e-5);
-  background-position: right var(--e-2) center;
 }
 
 .control--num {
@@ -424,23 +386,27 @@ select.control--sm {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
+  padding: 4px 11px 4px 9px;
   border-radius: var(--radio-pill);
   border: 1px solid var(--info-borde);
   background: var(--info-suave);
   color: var(--info);
   font-size: var(--t-xs);
-  font-weight: 700;
-  line-height: 1.6;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  line-height: 1.5;
   white-space: nowrap;
 }
 
+/* El punto lleva un halo del propio color: separa la marca del fondo teñido
+   sin necesidad de subir la saturación del texto. */
 .insignia::before {
   content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: currentColor;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 18%, transparent);
   flex-shrink: 0;
 }
 
@@ -458,12 +424,6 @@ select.control--sm {
   background: var(--advertencia-suave);
   border-color: var(--advertencia-borde);
   color: var(--advertencia);
-}
-
-.insignia--peligro {
-  background: var(--peligro-suave);
-  border-color: var(--peligro-borde);
-  color: var(--peligro);
 }
 
 /* ==========================================================================

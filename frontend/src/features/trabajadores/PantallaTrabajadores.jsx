@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Aviso from '../../components/Aviso';
 import Selector from '../../components/ui/Selector';
-import { IconoBuscar } from '../../components/iconos';
+import BuscadorExpandible from '../../components/ui/BuscadorExpandible';
 import './PantallaTrabajadores.css';
 
 const CLASES_GASTO = [
@@ -70,17 +70,12 @@ export default function PantallaTrabajadores() {
           </p>
         </div>
 
-        <div className="trabajadores__buscador">
-          <IconoBuscar size={16} aria-hidden="true" />
-          <input
-            type="search"
-            className="control"
-            placeholder="Buscar trabajador..."
-            aria-label="Buscar trabajador por nombre o cédula"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+        <BuscadorExpandible
+          valor={search}
+          onChange={setSearch}
+          placeholder="Nombre o cédula..."
+          etiqueta="Buscar trabajador por nombre o cédula"
+        />
       </header>
 
       {mensaje && <Aviso tipo={mensaje.tipo}>{mensaje.texto}</Aviso>}

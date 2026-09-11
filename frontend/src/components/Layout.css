@@ -11,7 +11,7 @@
   color: var(--sidebar-texto);
   display: flex;
   flex-direction: column;
-  padding: 20px 14px;
+  padding: 20px 12px;
   border-right: 1px solid var(--sidebar-borde);
 }
 
@@ -19,32 +19,42 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 10px 22px;
+  /* Sin padding lateral propio: el aside ya aporta el suyo, y sumarlos dejaba
+     al texto sin sitio en la barra angosta */
+  padding: 6px 6px 24px;
   color: var(--sidebar-texto-activo);
 }
 
 .sidebar__marca strong {
+  display: block;
   font-family: var(--fuente-marca);
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0;
+  font-size: 15.5px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
+/* flex-shrink: 0 es lo que impide que el cuadro se achate cuando el texto
+   de al lado no cabe — sin él la "C" se veía estirada. */
 .sidebar__logo {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radio-sm);
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
   background: var(--sidebar-texto-activo);
   color: var(--sidebar-bg);
   font-family: var(--fuente-marca);
   font-weight: 800;
-  font-size: 16px;
+  font-size: 17px;
+  line-height: 1;
 }
 
 .sidebar__submarca {
-  font-size: 11.5px;
+  font-size: 11px;
+  line-height: 1.35;
+  margin-top: 2px;
   color: var(--sidebar-texto);
   font-weight: 400;
 }

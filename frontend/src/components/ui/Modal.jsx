@@ -81,11 +81,18 @@ export default function Modal({
     const paddingPrevio = body.style.paddingRight;
 
     body.style.overflow = 'hidden';
-    if (anchoBarra > 0) body.style.paddingRight = `${anchoBarra}px`;
+    if (anchoBarra > 0) {
+      body.style.paddingRight = `${anchoBarra}px`;
+      // Al ocultar la barra, el viewport se ensancha y con él la capa fija:
+      // el panel centrado se correría media barra a la derecha justo al
+      // aparecer. Se le pasa la medida a la capa para que compense.
+      document.documentElement.style.setProperty('--ancho-barra-scroll', `${anchoBarra}px`);
+    }
 
     return () => {
       body.style.overflow = overflowPrevio;
       body.style.paddingRight = paddingPrevio;
+      document.documentElement.style.removeProperty('--ancho-barra-scroll');
     };
   }, [presente]);
 
@@ -144,7 +151,11 @@ export default function Modal({
             aria-labelledby={idTitulo}
             tabIndex={-1}
             onKeyDown={alPresionarTecla}
-            initial={sinMovimiento ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
+            // Escala corta a propósito: al animar scale sobre texto el
+            // navegador lo rasteriza a un tamaño y lo reescala, y al terminar
+            // lo redibuja nítido. Cuanto mayor el salto, más se nota ese
+            // "reajuste". El movimiento lo aporta sobre todo la Y.
+            initial={sinMovimiento ? { opacity: 0 } : { opacity: 0, scale: 0.985, y: 14 }}
             animate={{
               opacity: 1,
               scale: 1,

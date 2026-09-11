@@ -12,6 +12,9 @@
   align-items: center;
   justify-content: center;
   padding: var(--e-4);
+  /* Compensa el ancho que gana el viewport al ocultarse la barra de scroll,
+     para que el panel no se recoloque al aparecer (ver Modal.jsx) */
+  padding-right: calc(var(--e-4) + var(--ancho-barra-scroll, 0px));
 }
 
 .modal-fondo {

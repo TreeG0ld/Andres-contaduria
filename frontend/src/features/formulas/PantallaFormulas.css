@@ -32,11 +32,53 @@
   color: var(--texto);
 }
 
-.formulas__ayuda code {
+/* Ayuda de la fórmula: filas etiqueta + fichas, en vez de un párrafo corrido
+   con código incrustado —ahí los fragmentos se partían a mitad de palabra. */
+.ayuda-formula {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  padding: var(--e-3);
+  background: var(--bg-sutil);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+}
+
+.ayuda-formula__fila {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: var(--e-2);
+  align-items: baseline;
+}
+
+@media (max-width: 520px) {
+  .ayuda-formula__fila {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--e-1);
+  }
+}
+
+.ayuda-formula__clave {
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--texto-tenue);
+}
+
+.ayuda-formula__fichas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  min-width: 0;
+}
+
+.ayuda-formula code {
   font-family: var(--fuente-mono);
-  font-size: 0.95em;
-  background: var(--acento-suave);
+  font-size: var(--t-sm);
+  color: var(--texto);
+  background: var(--bg-elevada);
   border: 1px solid var(--borde);
   border-radius: 4px;
-  padding: 1px 4px;
+  padding: 2px 6px;
+  /* Una ficha se mueve entera a la línea siguiente, nunca se parte */
+  white-space: nowrap;
 }

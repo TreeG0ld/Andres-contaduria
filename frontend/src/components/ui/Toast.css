@@ -1,0 +1,46 @@
+/* Franja fija al pie, centrada. No intercepta clics: solo la píldora lo hace,
+   para no bloquear lo que haya debajo. */
+.toast-capa {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--e-5);
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--e-4);
+  pointer-events: none;
+}
+
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  max-width: 480px;
+  padding: 10px var(--e-4) 10px var(--e-3);
+  border-radius: var(--radio-pill);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-texto-activo);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  font-size: var(--t-base);
+  font-weight: 700;
+  pointer-events: auto;
+}
+
+.toast__icono {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.toast--exito .toast__icono {
+  color: #4ade80;
+}
+
+.toast--peligro .toast__icono {
+  color: var(--peligro-en-oscuro);
+}
+
+.toast__texto {
+  min-width: 0;
+}

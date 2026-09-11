@@ -8,7 +8,6 @@ import {
   ClockCounterClockwise,
   ListChecks,
   Calculator,
-  FileText,
   Users,
   MagnifyingGlass,
   CheckCircle,
@@ -19,10 +18,8 @@ import {
   FilePdf,
   FileXls,
   PencilSimple,
-  X,
-  ArrowClockwise,
-  Buildings,
-  LockSimple,
+  X,
+  LockKey,
 } from "@phosphor-icons/react";
 
 const PESO = "regular";
@@ -47,9 +44,6 @@ export function IconoFormulas(props) {
   return <Calculator weight={PESO} {...props} />;
 }
 
-export function IconoPlantillas(props) {
-  return <FileText weight={PESO} {...props} />;
-}
 
 export function IconoTrabajadores(props) {
   return <Users weight={PESO} {...props} />;
@@ -95,14 +89,10 @@ export function IconoCerrar(props) {
   return <X weight={PESO} {...props} />;
 }
 
-export function IconoReintentar(props) {
-  return <ArrowClockwise weight={PESO} {...props} />;
-}
 
-export function IconoEmpresa(props) {
-  return <Buildings weight={PESO} {...props} />;
-}
 
+// Relleno en vez de trazo: a 16px el candado de contorno se lee como un
+// rectángulo duro; la silueta sólida y el ojo redondo suavizan la forma.
 export function IconoCandado(props) {
-  return <LockSimple weight={PESO} {...props} />;
+  return <LockKey weight="fill" {...props} />;
 }
