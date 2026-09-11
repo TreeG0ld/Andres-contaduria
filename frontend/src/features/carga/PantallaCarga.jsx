@@ -21,6 +21,7 @@ export default function PantallaCarga() {
   // Integrated Revision states
   const [revisionCargaId, setRevisionCargaId] = useState(null);
   const [revisionData, setRevisionData] = useState(null);
+  const [pagosNoSalariales, setPagosNoSalariales] = useState({});
   const [revisionLoading, setRevisionLoading] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
   const [mensajeRevision, setMensajeRevision] = useState(null);
@@ -150,6 +151,15 @@ export default function PantallaCarga() {
       const res = await fetch(`/api/revision/${cargaId}`);
       const data = await res.json();
       setRevisionData(data);
+      
+      // Initialize local state for checkboxes
+      const inicial = {};
+      if (data.lineas) {
+        data.lineas.forEach(l => {
+          inicial[l.linea_id] = l.aplica_no_salarial;
+        });
+      }
+      setPagosNoSalariales(inicial);
     } catch (err) {
       console.error("Error al cargar revisión:", err);
       setMensajeRevision({ tipo: 'error', texto: "Error al conectar con el servidor para revisión." });
@@ -158,17 +168,32 @@ export default function PantallaCarga() {
     }
   };
 
-  const handleTogglePagoNoSalarial = async (lineaId, aplica) => {
+  const handleTogglePagoNoSalarial = (lineaId, aplica) => {
+    setPagosNoSalariales(prev => ({ ...prev, [lineaId]: aplica }));
+  };
+
+  const hasUnsavedChanges = React.useMemo(() => {
+    if (!revisionData || !revisionData.lineas) return false;
+    for (const l of revisionData.lineas) {
+      const current = pagosNoSalariales[l.linea_id] || false;
+      if (current !== (l.aplica_no_salarial || false)) {
+        return true;
+      }
+    }
+    return false;
+  }, [revisionData, pagosNoSalariales]);
+
+  const aplicarPagosNoSalariales = async () => {
     setIsUpdating(true); // Disable interface & show feedback
+    setMensajeRevision({ tipo: 'info', texto: "Recalculando pagos no salariales..." });
     try {
-      const res = await fetch(`/api/revision/${revisionCargaId}/toggle_pago_no_salarial`, {
+      const res = await fetch(`/api/revision/${revisionCargaId}/batch_pago_no_salarial`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          linea_id: lineaId,
-          aplica: aplica,
+          selecciones: pagosNoSalariales,
         }),
       });
       const data = await res.json();
@@ -177,6 +202,7 @@ export default function PantallaCarga() {
         const refreshRes = await fetch(`/api/revision/${revisionCargaId}`);
         const freshData = await refreshRes.json();
         setRevisionData(freshData);
+        setMensajeRevision({ tipo: 'success', texto: "Recálculo completado exitosamente." });
       } else {
         setMensajeRevision({ tipo: 'error', texto: data.error || "Error al actualizar Pago No Salarial" });
       }
@@ -215,6 +241,16 @@ export default function PantallaCarga() {
     } finally {
       setExcelLoading(false);
     }
+  };
+
+  const handleDescargarTerceros = () => {
+    // Just trigger the endpoint directly since it generates and returns the file
+    const downloadUrl = `/api/cargas/descargar_terceros/${revisionCargaId}`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleResetCarga = () => {
@@ -372,8 +408,7 @@ export default function PantallaCarga() {
                             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                               <input
                                 type="checkbox"
-                                checked={l.aplica_no_salarial}
-                                disabled={isUpdating}
+                                checked={pagosNoSalariales[l.linea_id] || false}
                                 onChange={(e) => handleTogglePagoNoSalarial(l.linea_id, e.target.checked)}
                                 style={{ cursor: isUpdating ? "not-allowed" : "pointer", width: "16px", height: "16px" }}
                               />
@@ -392,25 +427,71 @@ export default function PantallaCarga() {
                 </table>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <button
-                  onClick={handleDescargarExcel}
-                  disabled={excelLoading || isUpdating}
-                  style={{
-                    padding: "1rem 2rem",
-                    backgroundColor: (excelLoading || isUpdating) ? "#9CA3AF" : "#2563EB",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "15px",
-                    cursor: (excelLoading || isUpdating) ? "not-allowed" : "pointer",
-                    boxShadow: (excelLoading || isUpdating) ? "none" : "0 4px 6px -1px rgba(37, 99, 235, 0.2)",
-                    transition: "background-color 0.2s"
-                  }}
-                >
-                  {excelLoading ? "Generando Diario Contable..." : "Descargar Excel Final"}
-                </button>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "2rem" }}>
+                <div>
+                  <button
+                    onClick={aplicarPagosNoSalariales}
+                    disabled={isUpdating || !hasUnsavedChanges}
+                    style={{
+                      padding: "0.8rem 1.5rem",
+                      backgroundColor: isUpdating ? "#9CA3AF" : (!hasUnsavedChanges ? "#D1D5DB" : "#F59E0B"), 
+                      color: !hasUnsavedChanges ? "#6B7280" : "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      cursor: (isUpdating || !hasUnsavedChanges) ? "not-allowed" : "pointer",
+                      boxShadow: (isUpdating || !hasUnsavedChanges) ? "none" : "0 4px 6px -1px rgba(245, 158, 11, 0.2)",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    {isUpdating ? "Recalculando fórmulas..." : "Aplicar Pagos No Salariales y Recalcular"}
+                  </button>
+                  {hasUnsavedChanges && (
+                    <p style={{ margin: "0.5rem 0 0 0", color: "#B45309", fontSize: "12px", fontWeight: "500" }}>
+                      Guarda los cambios para continuar
+                    </p>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: "1rem" }}>
+                  <button
+                    onClick={handleDescargarTerceros}
+                    disabled={excelLoading || isUpdating || hasUnsavedChanges}
+                    style={{
+                      padding: "0.8rem 1.5rem",
+                      backgroundColor: (excelLoading || isUpdating || hasUnsavedChanges) ? "#9CA3AF" : "#10B981",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      cursor: (excelLoading || isUpdating || hasUnsavedChanges) ? "not-allowed" : "pointer",
+                      boxShadow: (excelLoading || isUpdating || hasUnsavedChanges) ? "none" : "0 4px 6px -1px rgba(16, 185, 129, 0.2)",
+                      transition: "background-color 0.2s"
+                    }}
+                  >
+                    Descargar Plano Terceros
+                  </button>
+                  <button
+                    onClick={handleDescargarExcel}
+                    disabled={excelLoading || isUpdating || hasUnsavedChanges}
+                    style={{
+                      padding: "0.8rem 1.5rem",
+                      backgroundColor: (excelLoading || isUpdating || hasUnsavedChanges) ? "#9CA3AF" : "#2563EB",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      cursor: (excelLoading || isUpdating || hasUnsavedChanges) ? "not-allowed" : "pointer",
+                      boxShadow: (excelLoading || isUpdating || hasUnsavedChanges) ? "none" : "0 4px 6px -1px rgba(37, 99, 235, 0.2)",
+                      transition: "background-color 0.2s"
+                    }}
+                  >
+                    {excelLoading ? "Generando Excel..." : "Descargar Excel Final"}
+                  </button>
+                </div>
               </div>
             </div>
           ) : (

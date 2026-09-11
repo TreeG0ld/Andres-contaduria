@@ -47,6 +47,27 @@ class SimpleParser(ParserBase):
             if planilla_match:
                 num_planilla = planilla_match.group(1)
                 
+            # Extraer periodos
+            MESES = {
+                "enero": 1, "febrero": 2, "marzo": 3, "abril": 4,
+                "mayo": 5, "junio": 6, "julio": 7, "agosto": 8,
+                "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12
+            }
+            def parse_date(year_str, month_name) -> date:
+                y = int(year_str)
+                m = MESES.get(month_name.lower().strip(), 1)
+                return date(y, m, 1)
+
+            periodo_aportes_match = re.search(r"Periodo\s+Cotizaci.n\s*:\s*([a-zA-ZáéíóúÁÉÍÓÚñÑ]+)\s+de\s+(\d{4})", text, re.IGNORECASE)
+            periodo_aportes = date.today()
+            if periodo_aportes_match:
+                periodo_aportes = parse_date(periodo_aportes_match.group(2), periodo_aportes_match.group(1))
+                
+            periodo_salud_match = re.search(r"Periodo\s+Servicio\s*:\s*([a-zA-ZáéíóúÁÉÍÓÚñÑ]+)\s+de\s+(\d{4})", text, re.IGNORECASE)
+            periodo_salud = date.today()
+            if periodo_salud_match:
+                periodo_salud = parse_date(periodo_salud_match.group(2), periodo_salud_match.group(1))
+                
             for page in pdf.pages:
                 tables = page.extract_tables()
                 if not tables:
@@ -110,5 +131,5 @@ class SimpleParser(ParserBase):
                                 ))
 
         aportante = Aportante(tipo_documento=tipo_doc, numero_documento=num_doc, razon_social=razon_social, codigo_sucursal=None, exonerado=True)
-        planilla = Planilla(operador="simple", numero_planilla=num_planilla, periodo_aportes=date.today(), periodo_salud=date.today(), fecha_pago=None, total_cotizantes_declarado=len(lineas))
+        planilla = Planilla(operador="simple", numero_planilla=num_planilla, periodo_aportes=periodo_aportes, periodo_salud=periodo_salud, fecha_pago=None, total_cotizantes_declarado=len(lineas))
         return ResultadoExtraccion(aportante=aportante, planilla=planilla, lineas=lineas, advertencias=advertencias)

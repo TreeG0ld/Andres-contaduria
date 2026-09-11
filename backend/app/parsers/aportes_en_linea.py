@@ -40,11 +40,23 @@ class AportesEnLineaParser(ParserBase):
                 num_doc = rs_match.group(1)
                 razon_social = rs_match.group(2).strip()
             
-            # Parse Planilla
-            planilla_match = re.search(r"(\d{8,12})", text)
+            # 2. Parse Planilla
+            planilla_match = re.search(r"Num.ro Planilla:\s*(\d+)", text)
             if planilla_match:
                 num_planilla = planilla_match.group(1)
                 
+            match_periodos = re.search(r"(\d{4}-\d{2})\s+(\d{4}-\d{2})\s+\d+", text)
+            periodo_aportes = date.today()
+            periodo_salud = date.today()
+            if match_periodos:
+                try:
+                    y_p, m_p = match_periodos.group(1).split("-")
+                    periodo_aportes = date(int(y_p), int(m_p), 1)
+                    y_s, m_s = match_periodos.group(2).split("-")
+                    periodo_salud = date(int(y_s), int(m_s), 1)
+                except:
+                    pass
+            
             for page in pdf.pages:
                 tables = page.extract_tables()
                 if not tables:
@@ -111,5 +123,5 @@ class AportesEnLineaParser(ParserBase):
                                 ))
 
         aportante = Aportante(tipo_documento="NIT", numero_documento=num_doc, razon_social=razon_social, codigo_sucursal=None, exonerado=True)
-        planilla = Planilla(operador="aportes_en_linea", numero_planilla=num_planilla, periodo_aportes=date.today(), periodo_salud=date.today(), fecha_pago=None, total_cotizantes_declarado=len(lineas))
+        planilla = Planilla(operador="aportes_en_linea", numero_planilla=num_planilla, periodo_aportes=periodo_aportes, periodo_salud=periodo_salud, fecha_pago=None, total_cotizantes_declarado=len(lineas))
         return ResultadoExtraccion(aportante=aportante, planilla=planilla, lineas=lineas, advertencias=advertencias)

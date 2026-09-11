@@ -50,7 +50,7 @@ class ARUSParser(ParserBase):
             tables = first_page.extract_tables()
             
             # 1. Parse Aportante Razón Social
-            razon_social_match = re.search(r"Razón\s+Social\s+([^\n]+?)\s+Nombre\s+Sucursal", text, re.IGNORECASE)
+            razon_social_match = re.search(r"Raz.n\s+Social\s+([^\n]+?)\s+Nombre\s+Sucursal", text, re.IGNORECASE)
             razon_social = razon_social_match.group(1).strip() if razon_social_match else ""
             
             # Documento (mapeando NI a NIT)

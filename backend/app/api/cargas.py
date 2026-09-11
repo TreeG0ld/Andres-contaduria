@@ -29,20 +29,25 @@ async def cargar_pdf(
         
     try:
         # 1. Extraccion
-        if operador.lower() == "soi":
-            parser = SOIParser()
-        elif operador.lower() == "arus":
-            parser = ARUSParser()
-        elif operador.lower() == "simple":
-            parser = SimpleParser()
-        elif operador.lower() == "aportes_en_linea":
-            parser = AportesEnLineaParser()
-        else:
+        parsers = {
+            "soi": SOIParser,
+            "arus": ARUSParser,
+            "simple": SimpleParser,
+            "aportes_en_linea": AportesEnLineaParser
+        }
+        
+        if operador.lower() not in parsers:
             return {"error": f"Operador {operador} no implementado aun"}
             
+        # 1. Extraer ciudad y dirección sin tocar los parsers
+        from app.exportacion.terceros import extraer_ciudad_direccion_de_pdf
+        ciudad_aportante, direccion_aportante = extraer_ciudad_direccion_de_pdf(tmp_path)
+        
+        # Parseo original
+        parser = parsers[operador.lower()]()
         extraccion = parser.extraer(tmp_path)
         
-        # 2. Base de datos - Persistencia en Postgres/Supabase
+        # Guardar en base de datos
         aportante_data = extraccion.aportante
         aportante = db.query(Aportante).filter(
             Aportante.tipo_documento == aportante_data.tipo_documento,
@@ -54,10 +59,16 @@ async def cargar_pdf(
                 tipo_documento=aportante_data.tipo_documento,
                 numero_documento=aportante_data.numero_documento,
                 razon_social=aportante_data.razon_social,
-                exonerado=aportante_data.exonerado
+                exonerado=aportante_data.exonerado,
+                ciudad=ciudad_aportante,
+                direccion=direccion_aportante
             )
             db.add(aportante)
             db.flush()
+        else:
+            # Actualizar si no tiene
+            if ciudad_aportante and not aportante.ciudad: aportante.ciudad = ciudad_aportante
+            if direccion_aportante and not aportante.direccion: aportante.direccion = direccion_aportante
             
         carga_data = extraccion.planilla
         periodo = date(carga_data.periodo_aportes.year, carga_data.periodo_aportes.month, 1)
@@ -93,17 +104,23 @@ async def cargar_pdf(
             db.flush()
             
         # Guardar trabajadores, vinculos y lineas de nomina
+        import re
         for line in extraccion.lineas:
+            # Asegurar que el número de documento solo tenga números (limpiar PT, espacios, etc)
+            doc_limpio = line.numero_documento
+            if doc_limpio:
+                doc_limpio = re.sub(r'\D', '', doc_limpio)
+                
             trabajador = db.query(Trabajador).filter(
                 Trabajador.tipo_documento == line.tipo_documento,
-                Trabajador.numero_documento == line.numero_documento
+                Trabajador.numero_documento == doc_limpio
             ).first()
             
             if not trabajador:
                 trabajador = Trabajador(
                     tipo_documento=line.tipo_documento,
-                    numero_documento=line.numero_documento,
-                    registro=line.numero_documento,
+                    numero_documento=doc_limpio,
+                    registro=doc_limpio,
                     nombre_completo=line.nombre_completo,
                     clase_gasto=None  # Sin clasificar por defecto
                 )
@@ -401,6 +418,29 @@ async def descargar_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+@router.get("/descargar_terceros/{carga_id}")
+async def descargar_terceros_excel(
+    carga_id: int,
+    db: Session = Depends(get_db)
+):
+    from app.exportacion.terceros import exportar_terceros
+    from fastapi.responses import FileResponse
+    from pathlib import Path
+    
+    try:
+        path_str = exportar_terceros(db, carga_id)
+        path = Path(path_str)
+        if not path.exists():
+            return {"error": "El archivo físico de exportación no existe"}
+            
+        return FileResponse(
+            path=path,
+            filename=path.name,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    except Exception as e:
+        return {"error": str(e)}
+
 @router.get("/historial")
 def listar_historial(db: Session = Depends(get_db)):
     from app.models.nomina import Carga
@@ -420,7 +460,8 @@ def listar_historial(db: Session = Depends(get_db)):
                 "numero_documento": aportante.numero_documento if aportante else ""
             },
             "operador": c.operador or "Desconocido",
-            "ruta_descarga": f"/api/cargas/descargar/{c.id}" if c.estado == "procesada" else None
+            "ruta_descarga": f"/api/cargas/descargar/{c.id}" if c.estado == "procesada" else None,
+            "ruta_descarga_terceros": f"/api/cargas/descargar_terceros/{c.id}" if c.estado in ["calculada", "procesada"] else None
         })
     return res
 

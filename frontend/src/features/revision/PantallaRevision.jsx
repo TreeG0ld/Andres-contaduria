@@ -3,6 +3,11 @@ import React, { useState, useEffect } from 'react';
 export default function PantallaRevision() {
   const [cargas, setCargas] = useState([]);
   const [selectedCargaId, setSelectedCargaId] = useState('');
+  
+  // States for filters
+  const [filtroEmpresa, setFiltroEmpresa] = useState("TODAS");
+  const [filtroPeriodo, setFiltroPeriodo] = useState("TODOS");
+
   const [revisionData, setRevisionData] = useState(null);
   const [selectedLinea, setSelectedLinea] = useState(null);
   const [editedValores, setEditedValores] = useState({}); // maps valor_calculado_id to string value
@@ -24,9 +29,43 @@ export default function PantallaRevision() {
       .catch(err => console.error("Error al cargar historial:", err));
   }, []);
 
+  // Compute unique filters
+  const empresasUnicas = React.useMemo(() => {
+    const empresas = new Set(cargas.map(c => c.aportante?.razon_social || "Sin Empresa"));
+    return Array.from(empresas).sort();
+  }, [cargas]);
+
+  const periodosUnicos = React.useMemo(() => {
+    const periodos = new Set(cargas.map(c => c.periodo || "Sin Periodo"));
+    return Array.from(periodos).sort().reverse();
+  }, [cargas]);
+
+  // Compute filtered cargas
+  const cargasFiltradas = React.useMemo(() => {
+    return cargas.filter(c => {
+      const cumpleEmpresa = filtroEmpresa === "TODAS" || (c.aportante?.razon_social || "Sin Empresa") === filtroEmpresa;
+      const cumplePeriodo = filtroPeriodo === "TODOS" || (c.periodo || "Sin Periodo") === filtroPeriodo;
+      return cumpleEmpresa && cumplePeriodo;
+    });
+  }, [cargas, filtroEmpresa, filtroPeriodo]);
+
+  // Auto-select first matching carga when filters change
+  useEffect(() => {
+    if (cargasFiltradas.length > 0) {
+      if (!cargasFiltradas.find(c => c.id === selectedCargaId)) {
+        setSelectedCargaId(cargasFiltradas[0].id);
+      }
+    } else {
+      setSelectedCargaId('');
+    }
+  }, [cargasFiltradas, selectedCargaId]);
+
   // Fetch revision data when selected load changes
   useEffect(() => {
-    if (!selectedCargaId) return;
+    if (!selectedCargaId) {
+      setRevisionData(null);
+      return;
+    }
     setLoading(true);
     setSelectedLinea(null);
     setEditedValores({});
@@ -107,7 +146,13 @@ export default function PantallaRevision() {
       const data = await res.json();
       if (data.status === 'success') {
         setMensaje({ tipo: 'success', texto: "¡Excel regenerado y descargado!" });
-        window.open(data.ruta_descarga, '_blank');
+        // Programmatic download to bypass popup blockers
+        const downloadUrl = data.ruta_descarga;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       } else {
         setMensaje({ tipo: 'error', texto: data.error || "Error al regenerar." });
       }
@@ -121,26 +166,59 @@ export default function PantallaRevision() {
 
   return (
     <div style={{ padding: "2rem", fontFamily: "'Outfit', sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem", marginBottom: "2rem", backgroundColor: "white", padding: "1.5rem", borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "24px", color: "#1E3A8A", fontWeight: "700" }}>Revisar Cálculos</h1>
-          <p style={{ margin: 0, color: "#6B7280", fontSize: "14px" }}>Revisa y cambia los montos de la nómina si ves algo mal antes de armar el Excel.</p>
+          <h2 style={{ margin: "0 0 0.5rem 0", fontSize: "20px", color: "#1E3A8A" }}>Revisar Cálculos</h2>
+          <p style={{ margin: 0, color: "#6B7280", fontSize: "14px" }}>
+            Revisa y cambia los montos de la nómina si ves algo mal antes de armar el Excel.
+          </p>
         </div>
 
-        {/* Dropdown de Selección de Carga */}
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          <label style={{ fontSize: "14px", fontWeight: "600", color: "#374151" }}>Periodo:</label>
-          <select
-            value={selectedCargaId}
-            onChange={(e) => setSelectedCargaId(e.target.value)}
-            style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid #D1D5DB", backgroundColor: "white", fontSize: "14px" }}
-          >
-            {cargas.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.periodo} - {c.aportante.razon_social} ({c.operador.toUpperCase()})
-              </option>
-            ))}
-          </select>
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <label style={{ fontSize: "12px", color: "#4B5563", marginBottom: "4px", fontWeight: "600" }}>Filtrar por Empresa:</label>
+            <select
+              value={filtroEmpresa}
+              onChange={(e) => setFiltroEmpresa(e.target.value)}
+              style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #D1D5DB", outline: "none", backgroundColor: "white", fontSize: "13px", maxWidth: "200px" }}
+            >
+              <option value="TODAS">-- Todas las Empresas --</option>
+              {empresasUnicas.map(emp => (
+                <option key={emp} value={emp}>{emp}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <label style={{ fontSize: "12px", color: "#4B5563", marginBottom: "4px", fontWeight: "600" }}>Filtrar por Periodo:</label>
+            <select
+              value={filtroPeriodo}
+              onChange={(e) => setFiltroPeriodo(e.target.value)}
+              style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #D1D5DB", outline: "none", backgroundColor: "white", fontSize: "13px", maxWidth: "150px" }}
+            >
+              <option value="TODOS">-- Todos los Meses --</option>
+              {periodosUnicos.map(per => (
+                <option key={per} value={per}>{per}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <label style={{ fontSize: "12px", color: "#4B5563", marginBottom: "4px", fontWeight: "600" }}>Archivo a Revisar:</label>
+            <select
+              value={selectedCargaId}
+              onChange={(e) => setSelectedCargaId(parseInt(e.target.value))}
+              style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #D1D5DB", outline: "none", backgroundColor: "white", fontSize: "13px", minWidth: "250px" }}
+              disabled={cargasFiltradas.length === 0}
+            >
+              {cargasFiltradas.length === 0 && <option value="">No hay archivos</option>}
+              {cargasFiltradas.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.periodo.replace("-", " ")} - {c.aportante?.razon_social || "Desconocido"} ({c.operador.toUpperCase()})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
