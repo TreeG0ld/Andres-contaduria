@@ -1,13 +1,5 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import PantallaLogin from './PantallaLogin';
-
-const ContextoSesion = createContext({ salir: () => {} });
-
-/** Da acceso a `salir()` desde cualquier punto de la app (lo usa el pie de
- *  la barra lateral) sin tener que ir pasando la función por props. */
-export function useSesion() {
-  return useContext(ContextoSesion);
-}
 
 /**
  * Decide si se muestra la app o la pantalla de ingreso.
@@ -53,16 +45,6 @@ export default function GuardiaSesion({ children }) {
     };
   }, [estado]);
 
-  const salir = async () => {
-    try {
-      await fetch('/api/auth/salir', { method: 'POST' });
-    } catch {
-      // Aunque falle la petición se cierra igual: la cookie caduca sola y
-      // dejar al usuario dentro porque el servidor no respondió sería peor.
-    }
-    setEstado('fuera');
-  };
-
   if (estado === 'cargando') {
     return <div className="cargando">Verificando sesión...</div>;
   }
@@ -71,7 +53,5 @@ export default function GuardiaSesion({ children }) {
     return <PantallaLogin onEntrar={() => setEstado('dentro')} />;
   }
 
-  return (
-    <ContextoSesion.Provider value={{ salir }}>{children}</ContextoSesion.Provider>
-  );
+  return children;
 }

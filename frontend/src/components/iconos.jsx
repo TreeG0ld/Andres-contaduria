@@ -18,9 +18,8 @@ import {
   FilePdf,
   FileXls,
   PencilSimple,
-  X,
+  X,
   LockKey,
-  SignOut,
 } from "@phosphor-icons/react";
 
 const PESO = "regular";
@@ -90,9 +89,7 @@ export function IconoCerrar(props) {
   return <X weight={PESO} {...props} />;
 }
 
-export function IconoSalir(props) {
-  return <SignOut weight={PESO} {...props} />;
-}
+
 
 // Relleno en vez de trazo: a 16px el candado de contorno se lee como un
 // rectángulo duro; la silueta sólida y el ojo redondo suavizan la forma.

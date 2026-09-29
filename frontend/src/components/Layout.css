@@ -73,31 +73,6 @@
   color: var(--sidebar-texto);
 }
 
-/* Acción secundaria: se mantiene discreta hasta que el cursor pasa por
-   encima, porque volver a entrar exige pedir otro código por correo y no
-   conviene invitar a pulsarla sin querer. */
-.sidebar__salir {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin-top: 10px;
-  padding: 8px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--sidebar-texto);
-  background: transparent;
-  border: none;
-  border-radius: var(--radio-sm);
-  cursor: pointer;
-  transition: background var(--transicion), color var(--transicion);
-}
-
-.sidebar__salir:hover {
-  background: var(--sidebar-bg-hover);
-  color: var(--peligro-en-oscuro);
-}
-
 .estado-api canvas {
   flex-shrink: 0;
 }
