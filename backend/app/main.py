@@ -1,50 +1,27 @@
 from pathlib import Path
 
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-
-from app.core.config import validar_configuracion
-from app.core.seguridad import requiere_sesion
 
 app = FastAPI(title="PILA")
 
 
-from app.api.auth import router as auth_router
 from app.api.cargas import router as cargas_router
 from app.api.revision import router as revision_router
 from app.api.trabajadores import router as trabajadores_router
 from app.api.formulas import router as formulas_router
 from app.api.plantillas import router as plantillas_router
 
-
-@app.on_event("startup")
-def avisar_configuracion_incompleta():
-    faltantes = validar_configuracion()
-    if faltantes:
-        print(
-            "AVISO: el ingreso por código no funcionará, faltan variables en .env: "
-            + ", ".join(faltantes)
-        )
-
-
 @app.get("/api/salud")
 def salud():
     return {"estado": "ok"}
 
-
-# Abierto: es la puerta de entrada
-app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
-
-# El resto exige sesión. La dependencia se aplica al router entero y no
-# endpoint por endpoint, para que ninguno nuevo quede abierto por olvido.
-PROTEGIDO = [Depends(requiere_sesion)]
-
-app.include_router(cargas_router, prefix="/api/cargas", tags=["cargas"], dependencies=PROTEGIDO)
-app.include_router(revision_router, prefix="/api/revision", tags=["revision"], dependencies=PROTEGIDO)
-app.include_router(trabajadores_router, prefix="/api/trabajadores", tags=["trabajadores"], dependencies=PROTEGIDO)
-app.include_router(formulas_router, prefix="/api/formulas", tags=["formulas"], dependencies=PROTEGIDO)
-app.include_router(plantillas_router, prefix="/api/plantillas", tags=["plantillas"], dependencies=PROTEGIDO)
+app.include_router(cargas_router, prefix="/api/cargas", tags=["cargas"])
+app.include_router(revision_router, prefix="/api/revision", tags=["revision"])
+app.include_router(trabajadores_router, prefix="/api/trabajadores", tags=["trabajadores"])
+app.include_router(formulas_router, prefix="/api/formulas", tags=["formulas"])
+app.include_router(plantillas_router, prefix="/api/plantillas", tags=["plantillas"])
 
 
 frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
