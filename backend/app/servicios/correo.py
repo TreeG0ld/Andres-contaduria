@@ -88,6 +88,18 @@ def enviar_codigo(codigo: str) -> None:
     Lanza excepción si falla; quien llama decide qué contarle al usuario —y
     nunca menciona la dirección de destino.
     """
+    # Sin API key no hay a dónde enviar, así que el código sale por el
+    # registro del servidor para poder probar el flujo en local. No es una
+    # puerta trasera: el código solo aparece en la consola de quien tiene
+    # acceso a la máquina, jamás en la respuesta HTTP. En producción hay que
+    # configurar RESEND_API_KEY, y si falta la app lo avisa al arrancar.
+    if not settings.resend_api_key:
+        print("\n" + "=" * 52)
+        print("  MODO LOCAL — el correo no se envió (falta RESEND_API_KEY)")
+        print(f"  Código de acceso: {codigo}")
+        print("=" * 52 + "\n", flush=True)
+        return
+
     respuesta = httpx.post(
         RESEND_URL,
         headers={"Authorization": f"Bearer {settings.resend_api_key}"},

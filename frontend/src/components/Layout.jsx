@@ -8,7 +8,9 @@ import {
   IconoRevision,
   IconoFormulas,
   IconoTrabajadores,
+  IconoSalir,
 } from "./iconos";
+import { useSesion } from "../features/auth/GuardiaSesion";
 import { NavBarTubelight } from "./ui/tubelight-navbar";
 import PageTransition from "./PageTransition";
 import "./Layout.css";
@@ -60,6 +62,7 @@ const RUTAS_CENTRADAS = new Set(["/"]);
 export default function Layout() {
   const location = useLocation();
   const centrado = RUTAS_CENTRADAS.has(location.pathname);
+  const { salir } = useSesion();
 
   return (
     <div className="shell">
@@ -76,6 +79,10 @@ export default function Layout() {
 
         <div className="sidebar__pie">
           <EstadoApi />
+          <button type="button" className="sidebar__salir" onClick={salir}>
+            <IconoSalir size={16} aria-hidden="true" />
+            Cerrar sesión
+          </button>
         </div>
       </aside>
 
