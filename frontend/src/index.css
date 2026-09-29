@@ -130,8 +130,12 @@ button {
    vuelven a padear, solo limitan el ancho de lectura.
    ========================================================================== */
 
+/* Tope alto porque estas pantallas son tablas densas y agradecen el ancho.
+   No se quita del todo: en monitores muy panorámicos una fila de 2000px
+   obliga a recorrer con la cabeza para seguir el renglón. El texto de lectura
+   se limita aparte, en .pagina__descripcion. */
 .pagina {
-  max-width: 1180px;
+  max-width: 1600px;
 }
 
 .pagina__cabecera {

@@ -7,8 +7,10 @@
   margin: 0 auto;
 }
 
+/* La vista de revisión integrada también lleva tabla: sigue el ancho del
+   resto de pantallas de datos, no el del formulario de carga. */
 .carga--ancha {
-  max-width: 980px;
+  max-width: 1400px;
 }
 
 .carga__formulario {
