@@ -7,6 +7,7 @@ from datetime import date
 from decimal import Decimal
 import os
 import re
+from pathlib import Path
 
 _cache_geografico = None
 
@@ -56,7 +57,10 @@ def get_cache_geografico():
     if _cache_geografico is None:
         _cache_geografico = {}
         try:
-            ruta = r"D:\andresContador\Andres-contaduria\archivos extraccion de  data\Países-Departamentos-Ciudades.xlsx"
+            root_dir = Path(__file__).resolve().parents[3]
+            ruta = root_dir / "archivos extraccion de  data" / "Países-Departamentos-Ciudades.xlsx"
+            if not os.path.exists(ruta):
+                ruta = r"D:\andresContador\Andres-contaduria\archivos extraccion de  data\Países-Departamentos-Ciudades.xlsx"
             if os.path.exists(ruta):
                 # Buscar dinámicamente la fila que contiene las cabeceras
                 df_temp = pd.read_excel(ruta, engine='openpyxl', header=None, nrows=20)
@@ -192,25 +196,31 @@ def exportar_terceros(db: Session, carga_id: int) -> str:
     ciudad_texto = aportante.ciudad if hasattr(aportante, 'ciudad') else ""
     direccion = aportante.direccion if hasattr(aportante, 'direccion') else ""
     
-    plantilla_path = r"D:\andresContador\Andres-contaduria\archivos extraccion de  data\PLANOterceros.xlsx"
+    root_dir = Path(__file__).resolve().parents[3]
+    plantilla_path = root_dir / "archivos extraccion de  data" / "PLANOterceros.xlsx"
+    if not os.path.exists(plantilla_path):
+        plantilla_path = r"D:\andresContador\Andres-contaduria\archivos extraccion de  data\PLANOterceros.xlsx"
     if not os.path.exists(plantilla_path):
         raise ValueError("Plantilla PLANOterceros no encontrada")
         
     wb = openpyxl.load_workbook(plantilla_path)
     ws = wb.active
     
-    vinculos = db.query(Vinculo).filter(Vinculo.aportante_id == aportante.id).all()
-    trabajadores = set()
-    for v in vinculos:
-        lineas = db.query(LineaNomina).filter(LineaNomina.carga_id == carga.id, LineaNomina.vinculo_id == v.id).count()
-        if lineas > 0:
+    # Obtener todas las líneas de la carga en orden de inserción (orden exacto del PDF)
+    lineas = db.query(LineaNomina).filter(LineaNomina.carga_id == carga.id).order_by(LineaNomina.id.asc()).all()
+    trabajadores = []
+    vistos = set()
+    for l in lineas:
+        v = db.query(Vinculo).filter(Vinculo.id == l.vinculo_id).first()
+        if v:
             t = db.query(Trabajador).filter(Trabajador.id == v.trabajador_id).first()
-            if t:
-                trabajadores.add(t)
+            if t and t.id not in vistos:
+                vistos.add(t.id)
+                trabajadores.append(t)
                 
     datos_geograficos = buscar_ciudad_en_maestro(ciudad_texto) if ciudad_texto else {"depto": "", "ciudad": ""}
     
-    for row_idx, t in enumerate(sorted(trabajadores, key=lambda x: x.nombre_completo), start=2):
+    for row_idx, t in enumerate(trabajadores, start=2):
         apellidos, nombres = separar_nombres(t.nombre_completo)
         
         ws.cell(row=row_idx, column=1, value=t.numero_documento)
