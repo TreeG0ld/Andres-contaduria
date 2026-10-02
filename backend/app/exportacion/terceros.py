@@ -5,8 +5,18 @@ from app.models.base import Aportante, Trabajador, Vinculo
 import pandas as pd
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 import os
 import re
+
+# Recursos que la app necesita en tiempo de ejecución: la plantilla del plano
+# de terceros y el maestro de ciudades. Viven dentro del paquete y se resuelven
+# en relación al propio archivo, no por ruta absoluta: antes apuntaban a
+# "D:\andresContador\..." —el disco del equipo donde se programó— así que la
+# descarga de terceros solo funcionaba en esa máquina.
+RECURSOS = Path(__file__).resolve().parent.parent / "recursos"
+PLANTILLA_TERCEROS = RECURSOS / "PLANOterceros.xlsx"
+MAESTRO_GEOGRAFICO = RECURSOS / "Paises-Departamentos-Ciudades.xlsx"
 
 _cache_geografico = None
 
@@ -56,7 +66,7 @@ def get_cache_geografico():
     if _cache_geografico is None:
         _cache_geografico = {}
         try:
-            ruta = r"D:\andresContador\Andres-contaduria\archivos extraccion de  data\Países-Departamentos-Ciudades.xlsx"
+            ruta = str(MAESTRO_GEOGRAFICO)
             if os.path.exists(ruta):
                 # Buscar dinámicamente la fila que contiene las cabeceras
                 df_temp = pd.read_excel(ruta, engine='openpyxl', header=None, nrows=20)
@@ -192,10 +202,10 @@ def exportar_terceros(db: Session, carga_id: int) -> str:
     ciudad_texto = aportante.ciudad if hasattr(aportante, 'ciudad') else ""
     direccion = aportante.direccion if hasattr(aportante, 'direccion') else ""
     
-    plantilla_path = r"D:\andresContador\Andres-contaduria\archivos extraccion de  data\PLANOterceros.xlsx"
+    plantilla_path = str(PLANTILLA_TERCEROS)
     if not os.path.exists(plantilla_path):
-        raise ValueError("Plantilla PLANOterceros no encontrada")
-        
+        raise ValueError(f"No se encontró la plantilla de terceros en {plantilla_path}")
+
     wb = openpyxl.load_workbook(plantilla_path)
     ws = wb.active
     
