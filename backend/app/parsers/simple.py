@@ -81,7 +81,7 @@ class SimpleParser(ParserBase):
                         # Saltar las filas de cabecera
                         for row in table[2:]:
                             if not row or not row[0]: continue
-                            if str(row[0]).strip().isdigit() or ("CC" in str(row[0]) or "NIT" in str(row[0])):
+                            if str(row[0]).strip().isdigit() or any(t in str(row[0]) for t in ["CC", "CE", "TI", "NIT", "PA", "PT", "PEP", "RC"]):
                                 doc_parts = str(row[0]).replace("\n", " ").split(" ")
                                 tipo_doc_emp = doc_parts[0]
                                 num_doc_emp = doc_parts[1] if len(doc_parts) > 1 else doc_parts[0]

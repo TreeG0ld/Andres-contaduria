@@ -132,91 +132,112 @@ class ARUSParser(ParserBase):
                             cotizantes_table = table
                             max_rows = len(table)
             
+            # Construir mapa de nombres limpios desde las tablas del documento
+            nombres_map = {}
+            for page in pdf.pages:
+                for table in page.extract_tables():
+                    if len(table) > 2:
+                        for row in table:
+                            if row and row[0] and len(row) > 1 and row[1]:
+                                doc_parts = str(row[0]).strip().split()
+                                if doc_parts and any(tipo in doc_parts[0] for tipo in ['CC', 'CE', 'NIT', 'TI', 'PA', 'RC', 'PT']):
+                                    doc_num = doc_parts[1].strip() if len(doc_parts) > 1 else doc_parts[0].strip()
+                                    clean_name = " ".join(str(row[1]).split()).strip()
+                                    if clean_name:
+                                        nombres_map[doc_num] = clean_name
+
             if cotizantes_table:
-                # Extracción por bloques usando expresiones regulares (inmune a saltos de línea)
-                pattern = r'(CC|CE|NIT|TI|PA|RC)\s+(\d+)'
-                matches = list(re.finditer(pattern, text))
+                # Extracción por bloques usando expresiones regulares en todas las páginas (inmune a saltos de línea)
+                pattern = r'(CC|CE|NIT|TI|PA|RC|PT)\s+(\d+)'
                 
-                for i in range(len(matches)):
-                    start = matches[i].start()
-                    end = matches[i+1].start() if i + 1 < len(matches) else len(text)
-                    block = text[start:end]
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if not page_text:
+                        continue
+                    matches = list(re.finditer(pattern, page_text))
                     
-                    # We use regex to find the 13 money values, e.g., $ 408.545
-                    moneys = re.findall(r"\$\s*([\d\.\,]+)", block)
-                    
-                    if len(moneys) >= 13:
-                        tipo_doc_emp = matches[i].group(1).strip()
-                        num_doc_emp = matches[i].group(2).strip()
+                    for i in range(len(matches)):
+                        start = matches[i].start()
+                        end = matches[i+1].start() if i + 1 < len(matches) else len(page_text)
+                        block = page_text[start:end]
                         
-                        # Extraer Tipo, Subtipo, Novedades y Días
-                        match_datos = re.search(r"(\d{2})\s+(\d{2}|[A-Z0-9]+)([\sX0]*?)(\d{1,2})[\s]*(\d{1,2})[\s]*(\d{1,2})[\s]*(\d{1,2})\s*\(", block)
+                        # We use regex to find the 13 money values, e.g., $ 408.545
+                        moneys = re.findall(r"\$\s*([\d\.\,]+)", block)
                         
-                        if match_datos:
-                            tipo_cot_emp = match_datos.group(1)
-                            subtipo_cot_emp = match_datos.group(2)
+                        if len(moneys) >= 13:
+                            tipo_doc_emp = matches[i].group(1).strip()
+                            num_doc_emp = matches[i].group(2).strip()
                             
-                            novedades_str = match_datos.group(3)
-                            xs = [x for x in novedades_str.split() if x == 'X']
-                            has_ing = len(xs) > 0
-                            has_ret = len(xs) > 1
+                            # Extraer Tipo, Subtipo, Novedades y Días
+                            match_datos = re.search(r"(\d{2})\s+(\d{2}|[A-Z0-9]+)([\sX0]*?)(\d{1,2})[\s]*(\d{1,2})[\s]*(\d{1,2})[\s]*(\d{1,2})\s*\(", block)
                             
-                            d_afp, d_eps, d_arl, d_ccf = map(int, match_datos.groups()[3:7])
-                        else:
-                            tipo_cot_emp = "01"
-                            subtipo_cot_emp = "00"
-                            has_ing = False
-                            has_ret = False
-                            d_afp, d_eps, d_arl, d_ccf = 0, 0, 0, 0
-                        
-                        # Parse moneys (los primeros 13 siempre corresponden al trabajador)
-                        ibc_pen = parse_money(moneys[0])
-                        ap_pen = parse_money(moneys[1])
-                        ibc_sal = parse_money(moneys[2])
-                        ap_sal = parse_money(moneys[3])
-                        ibc_riesgos = parse_money(moneys[4])
-                        ap_arl = parse_money(moneys[5])
-                        ibc_cajas = parse_money(moneys[6])
-                        ap_ccf = parse_money(moneys[7])
-                        
-                        dias = Dias(afp=d_afp, eps=d_eps, arp=d_arl, ccf=d_ccf)
-                        
-                        # Dummy for nombre_completo (Regex between doc number and tipo cotizante)
-                        # Removemos saltos de línea del bloque para buscar el nombre
-                        block_flat = block.replace('\n', ' ')
-                        name_match = re.search(rf"{num_doc_emp}\s+(.*?)\s+{tipo_cot_emp}\s+{subtipo_cot_emp}", block_flat)
-                        nombre_emp = name_match.group(1).strip() if name_match else "TRABAJADOR DESCONOCIDO"
-                        
-                        crudas = {}
-                        novedades = Novedades(ing=has_ing, ret=has_ret, crudas=crudas)
-                        
-                        # Calculate Base Salary directly from IBC Salud (General Base)
-                        salario = ibc_sal
-                        
-                        # Guardar aportes en crudas para uso del motor
-                        crudas["aporte_arl"] = float(ap_arl)
-                        crudas["aporte_ccf"] = float(ap_ccf)
-                        
-                        # Tarifa riesgos
-                        tarifa_riesgos = Decimal("0")
-                        
-                        lineas.append(LineaCotizante(
-                            tipo_documento=tipo_doc_emp,
-                            numero_documento=num_doc_emp,
-                            nombre_completo=nombre_emp,
-                            tipo_cotizante=tipo_cot_emp,
-                            subtipo_cotizante=subtipo_cot_emp,
-                            dias=dias,
-                            ibc_pension=ibc_pen,
-                            ibc_salud=ibc_sal,
-                            ibc_riesgos=ibc_riesgos,
-                            ibc_ccf=ibc_cajas,
-                            tarifa_riesgos=tarifa_riesgos,
-                            salario_basico=salario,
-                            novedades=novedades,
-                            aporte_ccf=ap_ccf,
-                            aporte_arl=ap_arl
-                        ))
+                            if match_datos:
+                                tipo_cot_emp = match_datos.group(1)
+                                subtipo_cot_emp = match_datos.group(2)
+                                
+                                novedades_str = match_datos.group(3)
+                                xs = [x for x in novedades_str.split() if x == 'X']
+                                has_ing = len(xs) > 0
+                                has_ret = len(xs) > 1
+                                
+                                d_afp, d_eps, d_arl, d_ccf = map(int, match_datos.groups()[3:7])
+                            else:
+                                tipo_cot_emp = "01"
+                                subtipo_cot_emp = "00"
+                                has_ing = False
+                                has_ret = False
+                                d_afp, d_eps, d_arl, d_ccf = 0, 0, 0, 0
+                            
+                            # Parse moneys (los primeros 13 siempre corresponden al trabajador)
+                            ibc_pen = parse_money(moneys[0])
+                            ap_pen = parse_money(moneys[1])
+                            ibc_sal = parse_money(moneys[2])
+                            ap_sal = parse_money(moneys[3])
+                            ibc_riesgos = parse_money(moneys[4])
+                            ap_arl = parse_money(moneys[5])
+                            ibc_cajas = parse_money(moneys[6])
+                            ap_ccf = parse_money(moneys[7])
+                            
+                            dias = Dias(afp=d_afp, eps=d_eps, arp=d_arl, ccf=d_ccf)
+                            
+                            # Obtener nombre limpio desde la tabla (evita mezclar caracteres de columnas contiguas)
+                            if num_doc_emp in nombres_map:
+                                nombre_emp = nombres_map[num_doc_emp]
+                            else:
+                                block_flat = block.replace('\n', ' ')
+                                name_match = re.search(rf"{num_doc_emp}\s+(.*?)\s+{tipo_cot_emp}\s+{subtipo_cot_emp}", block_flat)
+                                nombre_emp = name_match.group(1).strip() if name_match else "TRABAJADOR DESCONOCIDO"
+                            
+                            crudas = {}
+                            novedades = Novedades(ing=has_ing, ret=has_ret, crudas=crudas)
+                            
+                            # Calculate Base Salary directly from IBC Salud (General Base)
+                            salario = ibc_sal
+                            
+                            # Guardar aportes en crudas para uso del motor
+                            crudas["aporte_arl"] = float(ap_arl)
+                            crudas["aporte_ccf"] = float(ap_ccf)
+                            
+                            # Tarifa riesgos
+                            tarifa_riesgos = Decimal("0")
+                            
+                            lineas.append(LineaCotizante(
+                                tipo_documento=tipo_doc_emp,
+                                numero_documento=num_doc_emp,
+                                nombre_completo=nombre_emp,
+                                tipo_cotizante=tipo_cot_emp,
+                                subtipo_cotizante=subtipo_cot_emp,
+                                dias=dias,
+                                ibc_pension=ibc_pen,
+                                ibc_salud=ibc_sal,
+                                ibc_riesgos=ibc_riesgos,
+                                ibc_ccf=ibc_cajas,
+                                tarifa_riesgos=tarifa_riesgos,
+                                salario_basico=salario,
+                                novedades=novedades,
+                                aporte_ccf=ap_ccf,
+                                aporte_arl=ap_arl
+                            ))
             
             planilla = Planilla(
                 operador="arus",

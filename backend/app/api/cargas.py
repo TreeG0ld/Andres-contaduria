@@ -126,6 +126,9 @@ async def cargar_pdf(
                 )
                 db.add(trabajador)
                 db.flush()
+            else:
+                if line.nombre_completo and line.nombre_completo != "TRABAJADOR DESCONOCIDO":
+                    trabajador.nombre_completo = line.nombre_completo
                 
             vinculo = db.query(Vinculo).filter(
                 Vinculo.trabajador_id == trabajador.id,

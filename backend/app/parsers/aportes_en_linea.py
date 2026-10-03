@@ -67,14 +67,10 @@ class AportesEnLineaParser(ParserBase):
                     # Buscar la tabla de cotizantes
                     header_str = " ".join([str(x) for x in table[0] if x]).lower()
                     header_str2 = " ".join([str(x) for x in table[1] if x]).lower() if len(table) > 1 else ""
-                    print(f"Table header_str: {header_str}")
-                    print(f"Table header_str2: {header_str2}")
                     if "novedades" in header_str or "identific" in header_str2:
-                        print("Found cotizantes table!")
                         for row in table[2:]:
                             if not row or not row[0] or not row[1]: continue
-                            if str(row[0]).strip().isdigit() and str(row[1]).strip() in ["CC", "CE", "PEP", "PPT", "TI", "NIT", "PA", "PE"]:
-                                print(f"Valid row: {row[0]}, {row[1]}, {row[2]}")
+                            if str(row[0]).strip().isdigit() and str(row[1]).strip() in ["CC", "CE", "PEP", "PPT", "TI", "NIT", "PA", "PE", "PT", "RC"]:
                                 tipo_doc_emp = str(row[1]).strip()
                                 num_doc_emp = str(row[2]).strip()
                                 nombre_emp = str(row[4] or "").replace("\n", " ").strip() if len(row) > 4 else ""
