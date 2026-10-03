@@ -12,7 +12,9 @@ import app.models  # noqa: F401  registra los modelos en Base.metadata (Fase 2)
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# ConfigParser interpreta "%" como inicio de interpolación, y la URL de Supabase
+# trae la contraseña URL-encoded con "%21%2A" (! y *) -> hay que escapar el "%".
+config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
