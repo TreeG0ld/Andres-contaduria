@@ -10,7 +10,7 @@ Este documento contiene un resumen detallado de lo que se ha implementado, lo qu
   * Migrado de SQLite local a PostgreSQL en Supabase.
   * Creadas y migradas las 11 tablas del sistema (`aportantes`, `trabajadores`, `cargas`, `vinculos`, `lineas_nomina`, `valores_calculados`, `formulas`, `versiones_formula`, `plantillas`, `mapeo_plantilla` y `exportaciones`) utilizando Alembic.
 * **Extracción de Datos y Motor de Cálculo:**
-  * El lector de PDFs (`soi.py`) extrae automáticamente el aportante, periodo, tarifas y novedades de los cotizantes.
+  * Lector de PDFs multi-operador: Se cuenta con soporte de extracción para los operadores SOI (`soi.py`) y ARUS (`arus.py`). Ambos extraen automáticamente el aportante, periodo, tarifas y novedades de los cotizantes.
   * El motor evalúa de forma secuencial las 19 fórmulas y guarda los importes finales en la tabla `valores_calculados`.
 * **Fórmulas y Conceptos Oficiales:**
   * Sembramos las 19 fórmulas con los nombres exactos definidos en los comentarios del Excel (ej: `SUELDO BASE`, `NOMINA POR PAGAR`, `AUXILIO DE CESANTIAS POR PAGAR`).
@@ -27,8 +27,8 @@ Este documento contiene un resumen detallado de lo que se ha implementado, lo qu
 
 ## 2. Lo que falta por implementar (Siguientes Pasos)
 
-* **Scripts de Extracción para Otros Operadores (ARUS y SIMPLE):**
-  * Desarrollar los parsers de PDF correspondientes para extraer la información de las planillas PILA emitidas por los operadores ARUS y SIMPLE (actualmente solo está implementado el de SOI).
+* **Scripts de Extracción para Otros Operadores (SIMPLE):**
+  * Desarrollar el parser de PDF correspondiente para extraer la información de las planillas PILA emitidas por el operador SIMPLE (actualmente ya están implementados SOI y ARUS).
 * **Desarrollo del Frontend (Pantallas Pendientes):**
   * **Pantalla de Revisión:** Crear la tabla interactiva que permita ver y modificar los cálculos por empleado antes de descargar el Excel final.
   * **Pantalla de Historial:** Mostrar las cargas pasadas con enlaces de descarga directa de los archivos previamente generados.

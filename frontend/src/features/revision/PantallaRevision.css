@@ -1,0 +1,87 @@
+/* Tabla + editor de montos lado a lado; el editor cae debajo si no cabe */
+.revision {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(340px, 1fr);
+  gap: var(--e-5);
+  align-items: start;
+}
+
+.revision--sin-editor {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 1080px) {
+  .revision {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.revision__fila--activa {
+  background: var(--acento-suave);
+}
+
+.revision__fila--activa td {
+  color: var(--texto);
+}
+
+/* Panel de edición: sigue visible mientras se recorre la lista */
+.revision__editor {
+  position: sticky;
+  top: var(--e-5);
+}
+
+/* Lista de montos editables */
+.montos {
+  display: flex;
+  flex-direction: column;
+  max-height: 420px;
+  overflow-y: auto;
+  margin-bottom: var(--e-4);
+}
+
+.monto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  padding: var(--e-3) 0;
+  border-bottom: 1px solid var(--borde);
+}
+
+.monto:last-child {
+  border-bottom: none;
+}
+
+.monto__datos {
+  min-width: 0;
+  flex: 1;
+}
+
+.monto__concepto {
+  display: block;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--texto);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.monto__original {
+  font-size: var(--t-xs);
+  color: var(--texto-sutil);
+  font-variant-numeric: tabular-nums;
+}
+
+.monto__entrada {
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.revision__botones {
+  display: flex;
+  gap: var(--e-2);
+}
+
+.revision__botones .boton--primario {
+  flex: 1;
+}

@@ -1,0 +1,88 @@
+/* ==========================================================================
+   Botón de acción con destello
+   Reposo: negro liso. Al pasar el cursor, el botón crece apenas y una franja
+   de luz inclinada barre de izquierda a derecha, en bucle con una pausa.
+   ========================================================================== */
+
+.boton--brillo {
+  position: relative;
+  overflow: hidden;
+  transition: background var(--transicion), border-color var(--transicion),
+    transform 0.15s ease;
+}
+
+.boton--brillo:hover:not(:disabled):not(.boton--bloqueado) {
+  transform: scale(1.02);
+}
+
+.boton--brillo:active:not(:disabled):not(.boton--bloqueado) {
+  transform: scale(0.96);
+}
+
+.boton-brillo__contenido {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+/* La franja ocupa todo el botón y lleva la luz dibujada al centro con un
+   ancho fijo. Así el recorrido se mide en % del propio botón: barre igual de
+   bien el de ancho completo que el más angosto, sin ajustar nada por caso. */
+.boton-brillo__destello {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.22),
+    transparent
+  );
+  background-repeat: no-repeat;
+  background-size: 60px 100%;
+  background-position: center;
+  transform: translateX(-100%) skewX(-20deg);
+}
+
+.boton--brillo:hover:not(:disabled):not(.boton--bloqueado) .boton-brillo__destello,
+.boton--brillo:focus-visible:not(:disabled):not(.boton--bloqueado) .boton-brillo__destello {
+  /* 0.85s de barrido + 1s de pausa = ciclo de 1.85s.
+     La pausa va dentro de los keyframes para no depender de repeat-delay. */
+  animation: boton-destello 1.85s ease-in-out infinite;
+}
+
+@keyframes boton-destello {
+  0% {
+    transform: translateX(-100%) skewX(-20deg);
+  }
+  46% {
+    transform: translateX(100%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(100%) skewX(-20deg);
+  }
+}
+
+/* Sobre fondo claro un destello blanco no se vería: se oscurece */
+.boton--brillo:not(.boton--primario) .boton-brillo__destello {
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(24, 24, 27, 0.1),
+    transparent
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boton--brillo:hover:not(:disabled):not(.boton--bloqueado) .boton-brillo__destello,
+  .boton--brillo:focus-visible:not(:disabled):not(.boton--bloqueado) .boton-brillo__destello {
+    animation: none;
+  }
+  .boton--brillo:hover:not(:disabled):not(.boton--bloqueado),
+  .boton--brillo:active:not(:disabled):not(.boton--bloqueado) {
+    transform: none;
+  }
+}

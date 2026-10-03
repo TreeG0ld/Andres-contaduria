@@ -1,0 +1,48 @@
+.historial__empresa {
+  color: var(--texto);
+  font-weight: 700;
+}
+
+.historial__nit {
+  display: block;
+  font-size: var(--t-xs);
+  font-weight: 400;
+  color: var(--texto-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.historial__id {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--texto-tenue);
+  width: 72px;
+}
+
+.historial__periodo {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--texto);
+  white-space: nowrap;
+}
+
+.historial__operador {
+  text-transform: uppercase;
+  font-size: var(--t-xs);
+  letter-spacing: 0.03em;
+}
+
+.historial__fecha {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.historial__descargas {
+  display: flex;
+  gap: var(--e-2);
+  justify-content: flex-end;
+}
+
+.historial__pendiente {
+  color: var(--texto-sutil);
+  font-size: var(--t-sm);
+}

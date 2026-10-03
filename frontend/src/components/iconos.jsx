@@ -8,8 +8,18 @@ import {
   ClockCounterClockwise,
   ListChecks,
   Calculator,
-  FileText,
   Users,
+  MagnifyingGlass,
+  CheckCircle,
+  WarningCircle,
+  Warning,
+  Info,
+  DownloadSimple,
+  FilePdf,
+  FileXls,
+  PencilSimple,
+  X,
+  LockKey,
 } from "@phosphor-icons/react";
 
 const PESO = "regular";
@@ -34,10 +44,55 @@ export function IconoFormulas(props) {
   return <Calculator weight={PESO} {...props} />;
 }
 
-export function IconoPlantillas(props) {
-  return <FileText weight={PESO} {...props} />;
-}
 
 export function IconoTrabajadores(props) {
   return <Users weight={PESO} {...props} />;
+}
+
+export function IconoBuscar(props) {
+  return <MagnifyingGlass weight={PESO} {...props} />;
+}
+
+export function IconoExito(props) {
+  return <CheckCircle weight={PESO} {...props} />;
+}
+
+export function IconoError(props) {
+  return <WarningCircle weight={PESO} {...props} />;
+}
+
+export function IconoAdvertencia(props) {
+  return <Warning weight={PESO} {...props} />;
+}
+
+export function IconoInfo(props) {
+  return <Info weight={PESO} {...props} />;
+}
+
+export function IconoDescarga(props) {
+  return <DownloadSimple weight={PESO} {...props} />;
+}
+
+export function IconoPdf(props) {
+  return <FilePdf weight={PESO} {...props} />;
+}
+
+export function IconoExcel(props) {
+  return <FileXls weight={PESO} {...props} />;
+}
+
+export function IconoEditar(props) {
+  return <PencilSimple weight={PESO} {...props} />;
+}
+
+export function IconoCerrar(props) {
+  return <X weight={PESO} {...props} />;
+}
+
+
+
+// Relleno en vez de trazo: a 16px el candado de contorno se lee como un
+// rectángulo duro; la silueta sólida y el ojo redondo suavizan la forma.
+export function IconoCandado(props) {
+  return <LockKey weight="fill" {...props} />;
 }

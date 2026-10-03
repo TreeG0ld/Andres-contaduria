@@ -8,12 +8,20 @@ app = FastAPI(title="PILA")
 
 
 from app.api.cargas import router as cargas_router
+from app.api.revision import router as revision_router
+from app.api.trabajadores import router as trabajadores_router
+from app.api.formulas import router as formulas_router
+from app.api.plantillas import router as plantillas_router
 
 @app.get("/api/salud")
 def salud():
     return {"estado": "ok"}
 
 app.include_router(cargas_router, prefix="/api/cargas", tags=["cargas"])
+app.include_router(revision_router, prefix="/api/revision", tags=["revision"])
+app.include_router(trabajadores_router, prefix="/api/trabajadores", tags=["trabajadores"])
+app.include_router(formulas_router, prefix="/api/formulas", tags=["formulas"])
+app.include_router(plantillas_router, prefix="/api/plantillas", tags=["plantillas"])
 
 
 frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"

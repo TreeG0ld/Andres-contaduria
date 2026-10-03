@@ -42,11 +42,13 @@ def exportar_nomina(db: Session, carga_id: int, period: date, mapeos: list[Mapeo
     mapeos_ordenados = sorted(mapeos, key=lambda m: m.posicion)
     fecha_elaboracion = get_last_day_of_month(period)
     
-    # Obtener todas las líneas de la carga
-    lineas = db.query(LineaNomina).filter(LineaNomina.carga_id == carga_id).all()
+    # Obtener todas las líneas de la carga en orden de inserción (orden original del PDF)
+    lineas = db.query(LineaNomina).filter(LineaNomina.carga_id == carga_id).order_by(LineaNomina.id.asc()).all()
     
-    # Consecutivo de comprobante aumenta por cada trabajador
-    consecutivo_comprobante = 1
+    # Obtener el objeto carga para saber su consecutivo inicial
+    from app.models.nomina import Carga
+    carga = db.query(Carga).filter(Carga.id == carga_id).first()
+    consecutivo_comprobante = carga.consecutivo_inicial if carga.consecutivo_inicial else 1
     
     for linea in lineas:
         # Cargar detalles del trabajador y aportante
@@ -57,9 +59,12 @@ def exportar_nomina(db: Session, carga_id: int, period: date, mapeos: list[Mapeo
         worker_doc = trabajador.numero_documento if trabajador else ""
         clase_gasto = trabajador.clase_gasto if (trabajador and trabajador.clase_gasto) else "51"
         
-        # Cargar valores calculados
+        # Cargar valores calculados (respetar la edición manual si existe)
         valores = db.query(ValorCalculado).filter(ValorCalculado.linea_id == linea.id).all()
-        vals_dict = {v.codigo: float(v.valor_original) for v in valores}
+        vals_dict = {
+            v.codigo: float(v.valor_editado if v.valor_editado is not None else v.valor_original)
+            for v in valores
+        }
         
         for map_row in mapeos_ordenados:
             concept = map_row.codigo_calculo
@@ -81,24 +86,22 @@ def exportar_nomina(db: Session, carga_id: int, period: date, mapeos: list[Mapeo
             third_party = worker_doc
             if map_row.posicion in [8, 10, 12] and aportante:
                 if concept == "aporte_pension":
-                    third_party = aportante.nit_afp or ""
+                    third_party = aportante.numero_documento or ""
                 elif concept == "aporte_arl":
                     third_party = aportante.nit_arl or ""
                 elif concept == "aporte_ccf":
                     third_party = aportante.nit_ccf or ""
-
-
-
                 
-            # Débito vs Crédito
-            debito_val = amount if side == "debito" else 0.0
-            credito_val = amount if side == "credito" else 0.0
+            # Débito vs Crédito (redondeados a enteros para cumplir regla contable)
+            amount_int = round(float(amount)) if amount else 0
+            debito_val = amount_int if side == "debito" else 0
+            credito_val = amount_int if side == "credito" else 0
             
             # Estructurar fila (27 columnas)
             row_data = [""] * 27
             row_data[0] = 8  # Tipo de comprobante (A)
             row_data[1] = consecutivo_comprobante  # Consecutivo aumenta por trabajador (B)
-            row_data[2] = fecha_elaboracion.strftime("%Y-%m-%d")  # Fecha (C)
+            row_data[2] = fecha_elaboracion.strftime("%d/%m/%Y")  # Fecha (C)
             row_data[3] = "COP"  # Moneda (D)
             row_data[5] = account_code  # Cuenta (F)
             row_data[6] = third_party  # Tercero (G)

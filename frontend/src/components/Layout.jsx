@@ -7,7 +7,6 @@ import {
   IconoHistorial,
   IconoRevision,
   IconoFormulas,
-  IconoPlantillas,
   IconoTrabajadores,
 } from "./iconos";
 import { NavBarTubelight } from "./ui/tubelight-navbar";
@@ -19,7 +18,6 @@ const NAV = [
   { to: "/historial", etiqueta: "Historial de cargas", Icono: IconoHistorial },
   { to: "/revision", etiqueta: "Revisión", Icono: IconoRevision },
   { to: "/formulas", etiqueta: "Fórmulas", Icono: IconoFormulas },
-  { to: "/plantillas", etiqueta: "Plantillas", Icono: IconoPlantillas },
   { to: "/trabajadores", etiqueta: "Trabajadores", Icono: IconoTrabajadores },
 ];
 

@@ -15,6 +15,7 @@ class Carga(Base):
     hash_archivo = Column(String, nullable=True)
     estado = Column(String, nullable=False, default="cargada")
     version_formula_id = Column(Integer, nullable=True)
+    consecutivo_inicial = Column(Integer, default=1)
     creado_at = Column(Date, default=datetime.date.today)
 
     __table_args__ = (
@@ -39,6 +40,7 @@ class LineaNomina(Base):
     ibc_ccf = Column(Numeric(15, 2), nullable=False, default=0)
     
     tarifa_riesgos = Column(Numeric(15, 4), nullable=True)
+    
     salario_basico = Column(Numeric(15, 2), nullable=True)
     
     nov_ing = Column(Boolean, nullable=False, default=False)

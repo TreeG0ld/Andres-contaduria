@@ -1,0 +1,17 @@
+.trabajadores__conteo {
+  font-size: var(--t-sm);
+  color: var(--texto-tenue);
+  margin-bottom: var(--e-3);
+}
+
+.trabajadores__nombre {
+  min-width: 260px;
+}
+
+.trabajadores__doc {
+  font-variant-numeric: tabular-nums;
+}
+
+.trabajadores__clase {
+  min-width: 250px;
+}

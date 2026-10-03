@@ -13,6 +13,8 @@ class Aportante(Base):
     nit_arl = Column(String, nullable=True)
     nit_ccf = Column(String, nullable=True)
     nit_afp = Column(String, nullable=True)
+    direccion = Column(String, nullable=True)
+    ciudad = Column(String, nullable=True)
     
     __table_args__ = (
         UniqueConstraint("tipo_documento", "numero_documento", name="uix_aportante_doc"),
