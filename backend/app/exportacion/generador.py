@@ -78,7 +78,7 @@ def exportar_nomina(db: Session, carga_id: int, period: date, mapeos: list[Mapeo
             account_code = acc_tpl
             if "X" in account_code:
                 if clase_gasto == "72" and concept == "auxilio_transporte":
-                    account_code = "72072701"
+                    account_code = "72052701"
                 else:
                     account_code = account_code.replace("X", clase_gasto)
                     
