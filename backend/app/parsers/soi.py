@@ -108,7 +108,7 @@ class SOIParser(ParserBase):
                                 ibc_cajas = parse_money(row[49])
                                 
                                 # Calculate Base Salary directly from IBC Salud
-                                salario = ibc_sal
+                                salario = parse_money(row[5])
                                 
                                 # Days
                                 d_afp = int(row[28].replace("\n", "").strip() or 0)

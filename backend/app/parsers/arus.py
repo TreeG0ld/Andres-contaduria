@@ -212,7 +212,11 @@ class ARUSParser(ParserBase):
                             novedades = Novedades(ing=has_ing, ret=has_ret, crudas=crudas)
                             
                             # Calculate Base Salary directly from IBC Salud (General Base)
-                            salario = ibc_sal
+                            dias_p = max(d_afp, 1)
+                            if d_afp < 30 and d_afp > 0:
+                                salario = (ibc_pen / Decimal(str(dias_p))) * Decimal("30")
+                            else:
+                                salario = ibc_pen
                             
                             # Guardar aportes en crudas para uso del motor
                             crudas["aporte_arl"] = float(ap_arl)

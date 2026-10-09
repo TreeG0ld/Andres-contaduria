@@ -98,7 +98,11 @@ class AportesEnLineaParser(ParserBase):
                                 ap_arl = parse_money(row[43] if len(row) > 43 else "0")
 
                                 # Calculate Base Salary directly from IBC Salud
-                                salario = ibc_sal
+                                dias_p = max(d_eps, 1)
+                                if d_eps < 30 and d_eps > 0:
+                                    salario = (ibc_sal / Decimal(str(dias_p))) * Decimal("30")
+                                else:
+                                    salario = ibc_sal
 
                                 lineas.append(LineaCotizante(
                                     tipo_documento=tipo_doc_emp,
