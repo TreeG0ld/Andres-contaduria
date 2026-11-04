@@ -202,12 +202,14 @@ class ARUSParser(ParserBase):
                             ibc_cajas = parse_money(moneys[6])
                             ap_ccf = parse_money(moneys[7])
                             
-                            # Caso pensionado (sin aporte a pensión): el IBC pensión viene en 0
-                            # y se toma el IBC salud. Los días vienen pegados en el texto del PDF
+                            # Caso pensionado (sin aporte a pensión): el IBC pensión viene en 0.
+                            # Los días vienen pegados en el texto del PDF
                             # (ej. "0 0131313" = 0 + AFP 0 + 13/13/13), por lo que se releen aparte.
                             # Esta rama NO se ejecuta para los demás trabajadores.
-                            if ibc_pen == 0 and ibc_sal > 0 and subtipo_cot_emp != "00":
-                                ibc_pen = ibc_sal
+                            es_pensionado = ibc_pen == 0 and ibc_sal > 0 and subtipo_cot_emp != "00"
+                            if es_pensionado:
+                                # El IBC pensión se queda en 0 (el PDF dice que no cotiza pensión), así las
+                                # fórmulas de pensión dan 0. El sueldo sale de [IBC Salud].
                                 tokens = block.split("(")[0].split()
                                 cola = []
                                 for tk in reversed(tokens):
@@ -246,7 +248,9 @@ class ARUSParser(ParserBase):
                                 salario = (ibc_pen / Decimal(str(dias_p))) * Decimal("30")
                             else:
                                 salario = ibc_pen
-                            
+                            if es_pensionado:
+                                salario = ibc_sal  # sin prorratear: el pensionado no tiene IBC de pensión
+
                             # Guardar aportes en crudas para uso del motor
                             crudas["aporte_arl"] = float(ap_arl)
                             crudas["aporte_ccf"] = float(ap_ccf)
