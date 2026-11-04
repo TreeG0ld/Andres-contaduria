@@ -14,7 +14,7 @@ class Aportante:
 class Planilla:
     operador: str
     numero_planilla: str
-    periodo_aportes: date
+    periodo_aportes: date | None
     periodo_salud: date
     fecha_pago: date | None
     total_cotizantes_declarado: int

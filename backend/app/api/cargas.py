@@ -15,6 +15,28 @@ import shutil
 
 router = APIRouter()
 
+
+def validar_version_vs_periodo(version, periodo: date) -> str | None:
+    """Devuelve un mensaje de error si la versión de fórmulas activa no corresponde
+    al año de la planilla, o None si todo concuerda. El año de la versión se toma
+    del año (20XX) que aparece en su nombre, ej. 'Año 2025'."""
+    import re
+    if version is None:
+        return ("No hay una versión de fórmulas activa. Activa la versión del año "
+                f"{periodo.year} en la pantalla de Fórmulas y vuelve a cargar la planilla.")
+    m = re.search(r"(20\d{2})", version.nombre or "")
+    if not m:
+        return (f"La versión de fórmulas activa ('{version.nombre}') no indica un año en su nombre, "
+                f"por lo que no se puede validar contra la planilla ({periodo.year}). "
+                "Renómbrala incluyendo el año (ej. 'Año 2026') o activa otra versión.")
+    anio_version = int(m.group(1))
+    if anio_version != periodo.year:
+        return (f"La planilla es del periodo {periodo.year}-{periodo.month:02d}, pero la versión de fórmulas "
+                f"activa es '{version.nombre}' (año {anio_version}). Activa en la pantalla de Fórmulas la "
+                f"versión del año {periodo.year} y vuelve a cargar la planilla. No se guardó nada.")
+    return None
+
+
 @router.post("/cargar")
 async def cargar_pdf(
     pdf_file: UploadFile = File(...),
@@ -46,7 +68,20 @@ async def cargar_pdf(
         # Parseo original
         parser = parsers[operador.lower()]()
         extraccion = parser.extraer(tmp_path)
-        
+
+        # Si el PDF no trae el periodo de cotización legible, no se asume ninguno
+        if extraccion.planilla.periodo_aportes is None:
+            return {"error": "No se pudo leer el periodo de cotización de la planilla. No se guardó nada."}
+
+        # Validar que la versión de fórmulas activa corresponda al año de la planilla
+        # (antes de escribir cualquier cosa en la base de datos)
+        from app.models.config import VersionFormula as _VersionFormula
+        periodo_planilla = date(extraccion.planilla.periodo_aportes.year, extraccion.planilla.periodo_aportes.month, 1)
+        version_activa = db.query(_VersionFormula).filter(_VersionFormula.activa == True).first()
+        error_version = validar_version_vs_periodo(version_activa, periodo_planilla)
+        if error_version:
+            return {"error": error_version}
+
         # Guardar en base de datos
         aportante_data = extraccion.aportante
         aportante = db.query(Aportante).filter(
@@ -67,6 +102,8 @@ async def cargar_pdf(
             db.flush()
         else:
             # Actualizar si no tiene
+            if aportante_data.razon_social and not aportante.razon_social:
+                aportante.razon_social = aportante_data.razon_social
             if ciudad_aportante and not aportante.ciudad: aportante.ciudad = ciudad_aportante
             if direccion_aportante and not aportante.direccion: aportante.direccion = direccion_aportante
             
@@ -274,13 +311,11 @@ def _generar_excel_carga(db: Session, carga):
     almacen_path = Path(settings.almacen_dir) / "exportaciones"
     almacen_path.mkdir(parents=True, exist_ok=True)
     
-    # Nombre de archivo: nomina_{nombreempresa}_{periodo}
+    # Nombre de archivo: {nombre}-{periodo}
     from app.models.base import Aportante
+    from app.exportacion.nombres import nombre_archivo_exportacion
     aportante = db.query(Aportante).filter(Aportante.id == carga.aportante_id).first()
-    nombre_empresa = aportante.razon_social.replace(" ", "_").replace("/", "-") if aportante else "empresa"
-    periodo_str = carga.periodo.strftime("%Y-%m")
-    
-    dest_file = almacen_path / f"nomina_{nombre_empresa}_{periodo_str}.xlsx"
+    dest_file = almacen_path / nombre_archivo_exportacion(aportante, carga.periodo)
     
     if os.path.exists(temp_xlsx_path):
         shutil.copy(temp_xlsx_path, dest_file)
@@ -414,10 +449,20 @@ async def descargar_excel(
     path = Path(exportacion.ruta_archivo)
     if not path.exists():
         return {"error": "El archivo físico de exportación no existe"}
-        
+
+    # Nombre de descarga: {nombre}-{periodo} (también para archivos generados antes con otro nombre)
+    from app.models.nomina import Carga
+    from app.models.base import Aportante
+    from app.exportacion.nombres import nombre_archivo_exportacion
+    carga = db.query(Carga).filter(Carga.id == carga_id).first()
+    nombre_descarga = path.name
+    if carga:
+        aportante = db.query(Aportante).filter(Aportante.id == carga.aportante_id).first()
+        nombre_descarga = nombre_archivo_exportacion(aportante, carga.periodo)
+
     return FileResponse(
         path=path,
-        filename=path.name,
+        filename=nombre_descarga,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 

@@ -59,7 +59,7 @@ class SimpleParser(ParserBase):
                 return date(y, m, 1)
 
             periodo_aportes_match = re.search(r"Periodo\s+Cotizaci.n\s*:\s*([a-zA-ZáéíóúÁÉÍÓÚñÑ]+)\s+de\s+(\d{4})", text, re.IGNORECASE)
-            periodo_aportes = date.today()
+            periodo_aportes = None  # si no se encuentra en el PDF, la carga se rechaza
             if periodo_aportes_match:
                 periodo_aportes = parse_date(periodo_aportes_match.group(2), periodo_aportes_match.group(1))
                 

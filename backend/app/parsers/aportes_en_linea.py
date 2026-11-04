@@ -46,7 +46,7 @@ class AportesEnLineaParser(ParserBase):
                 num_planilla = planilla_match.group(1)
                 
             match_periodos = re.search(r"(\d{4}-\d{2})\s+(\d{4}-\d{2})\s+\d+", text)
-            periodo_aportes = date.today()
+            periodo_aportes = None  # si no se encuentra en el PDF, la carga se rechaza
             periodo_salud = date.today()
             if match_periodos:
                 try:

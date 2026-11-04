@@ -66,7 +66,7 @@ class SOIParser(ParserBase):
             
             # Periodos
             periodo_aportes_match = re.search(r"PERIODO\s+COTIZACI.N\s+OTROS\s+MES\s*([a-zA-Z]+)\s+A.O\s*(\d+)", text, re.IGNORECASE)
-            periodo_aportes = date.today()
+            periodo_aportes = None  # si no se encuentra en el PDF, la carga se rechaza
             if periodo_aportes_match:
                 periodo_aportes = parse_date(periodo_aportes_match.group(2), periodo_aportes_match.group(1))
                 

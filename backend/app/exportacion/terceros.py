@@ -243,10 +243,8 @@ def exportar_terceros(db: Session, carga_id: int) -> str:
     
     almacen_path = Path(settings.almacen_dir) / "exportaciones"
     almacen_path.mkdir(parents=True, exist_ok=True)
-    nombre_empresa = aportante.razon_social.replace(" ", "_").replace("/", "-")
-    periodo_str = carga.periodo.strftime("%Y-%m")
-    
-    dest_file = almacen_path / f"terceros-{nombre_empresa}-{periodo_str}.xlsx"
+    from app.exportacion.nombres import nombre_archivo_exportacion
+    dest_file = almacen_path / nombre_archivo_exportacion(aportante, carga.periodo, "terceros")
     wb.save(dest_file)
     
     return str(dest_file)

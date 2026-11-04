@@ -52,6 +52,10 @@ class ARUSParser(ParserBase):
             # 1. Parse Aportante Razón Social
             razon_social_match = re.search(r"Raz.n\s+Social\s+([^\n]+?)\s+Nombre\s+Sucursal", text, re.IGNORECASE)
             razon_social = razon_social_match.group(1).strip() if razon_social_match else ""
+            if not razon_social:
+                # Formato alterno (Enlace Operativo / SuAporte): la razón social termina en el salto de línea
+                razon_social_alt = re.search(r"Raz.n\s+Social\s+([^\n]+)", text, re.IGNORECASE)
+                razon_social = razon_social_alt.group(1).strip() if razon_social_alt else ""
             
             # Documento (mapeando NI a NIT)
             doc_match = re.search(r"Documento\s*([A-Za-z]+)?\s*(\d+)", text, re.IGNORECASE)
@@ -101,7 +105,7 @@ class ARUSParser(ParserBase):
             num_planilla = num_planilla_match.group(1) if num_planilla_match else ""
             
             periodo_aportes_match = re.search(r"Periodo\s+Cotizaci.n\s*:\s*([a-zA-ZáéíóúÁÉÍÓÚñÑ]+)\s+de\s+(\d{4})", text, re.IGNORECASE)
-            periodo_aportes = date.today()
+            periodo_aportes = None  # si no se encuentra en el PDF, la carga se rechaza
             if periodo_aportes_match:
                 periodo_aportes = parse_date(periodo_aportes_match.group(2), periodo_aportes_match.group(1))
                 
@@ -198,8 +202,33 @@ class ARUSParser(ParserBase):
                             ibc_cajas = parse_money(moneys[6])
                             ap_ccf = parse_money(moneys[7])
                             
+                            # Caso pensionado (sin aporte a pensión): el IBC pensión viene en 0
+                            # y se toma el IBC salud. Los días vienen pegados en el texto del PDF
+                            # (ej. "0 0131313" = 0 + AFP 0 + 13/13/13), por lo que se releen aparte.
+                            # Esta rama NO se ejecuta para los demás trabajadores.
+                            if ibc_pen == 0 and ibc_sal > 0 and subtipo_cot_emp != "00":
+                                ibc_pen = ibc_sal
+                                tokens = block.split("(")[0].split()
+                                cola = []
+                                for tk in reversed(tokens):
+                                    if tk.isdigit():
+                                        cola.insert(0, tk)
+                                    else:
+                                        break
+                                if len(cola) >= 2 and cola[0] == tipo_cot_emp and cola[1] == subtipo_cot_emp:
+                                    cola = cola[2:]
+                                pegado = "".join(cola)
+                                # Formato: columna extra "0" + días AFP "0" + días EPS/ARP/CCF
+                                if len(pegado) >= 5 and pegado[:2] == "00" and len(pegado[2:]) % 3 == 0:
+                                    resto = pegado[2:]
+                                    n = len(resto) // 3
+                                    partes = [resto[i * n:(i + 1) * n] for i in range(3)]
+                                    if len(set(partes)) == 1 and 0 < int(partes[0]) <= 30:
+                                        d_afp = 0
+                                        d_eps = d_arl = d_ccf = int(partes[0])
+
                             dias = Dias(afp=d_afp, eps=d_eps, arp=d_arl, ccf=d_ccf)
-                            
+
                             # Obtener nombre limpio desde la tabla (evita mezclar caracteres de columnas contiguas)
                             if num_doc_emp in nombres_map:
                                 nombre_emp = nombres_map[num_doc_emp]
