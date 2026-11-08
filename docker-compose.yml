@@ -19,8 +19,11 @@ services:
     restart: unless-stopped
     depends_on:
       - db
-    environment:
-      DATABASE_URL: postgresql+psycopg://pila:pila@db:5432/pila
+    # La conexión a la base (Supabase) se toma de backend/.env. Si ese archivo no existe
+    # (desarrollo local), la app usa su valor por defecto (el servicio db de este compose).
+    env_file:
+      - path: ./backend/.env
+        required: false
     volumes:
       - ./almacen:/almacen
       - ./backend/app:/repo/backend/app
