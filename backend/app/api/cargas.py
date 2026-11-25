@@ -37,6 +37,48 @@ def validar_version_vs_periodo(version, periodo: date) -> str | None:
     return None
 
 
+def preparar_lineas_sln(lineas):
+    """Una planilla puede traer al mismo trabajador en varias filas. Regla de negocio:
+    - La fila marcada SLN solo aporta la pensión que trae el PDF (sin fórmulas). Esa pensión se
+      guarda en la fila normal del mismo trabajador (sln_pension) y el generador la escribe en el
+      mismo consecutivo (cuentas de pensión 72056702 débito y 25700502 crédito).
+    - La fila sin SLN se calcula con las fórmulas de siempre.
+    - Si el trabajador solo tiene filas SLN, su comprobante lleva únicamente esas dos cuentas.
+    - Si tiene varias filas SIN SLN no se asume nada: se devuelve un error y no se guarda.
+    Devuelve (lineas, mensaje_de_error)."""
+    import re
+    from dataclasses import replace
+    from app.parsers.base import Novedades
+
+    grupos = {}
+    for l in lineas:
+        clave = (l.tipo_documento, re.sub(r"\D", "", l.numero_documento or ""))
+        grupos.setdefault(clave, []).append(l)
+
+    resultado = []
+    for clave, grupo in grupos.items():
+        sln = [l for l in grupo if (l.novedades.crudas or {}).get("sln")]
+        normales = [l for l in grupo if not (l.novedades.crudas or {}).get("sln")]
+        if len(normales) > 1:
+            return None, (f"El trabajador {clave[1]} aparece en {len(normales)} filas de la planilla sin "
+                          "novedad SLN. No se guardó nada; revisa la planilla antes de cargarla.")
+        if not sln:
+            resultado.extend(normales)
+            continue
+        info = {
+            "sln_pension": sum(float((l.novedades.crudas or {}).get("aporte_pension", 0)) for l in sln),
+            "sln_dias": sum(l.dias.afp for l in sln),
+            "sln_ibc": float(sum(l.ibc_pension for l in sln)),
+        }
+        base = normales[0] if normales else sln[0]
+        crudas = dict(base.novedades.crudas or {})
+        if not normales:
+            crudas["solo_sln"] = True
+        crudas.update(info)
+        resultado.append(replace(base, novedades=Novedades(ing=base.novedades.ing, ret=base.novedades.ret, crudas=crudas)))
+    return resultado, None
+
+
 @router.post("/cargar")
 async def cargar_pdf(
     pdf_file: UploadFile = File(...),
@@ -81,6 +123,11 @@ async def cargar_pdf(
         error_version = validar_version_vs_periodo(version_activa, periodo_planilla)
         if error_version:
             return {"error": error_version}
+
+        # Trabajadores con varias filas (SLN): se resuelve antes de escribir cualquier cosa en la base
+        lineas_planilla, error_lineas = preparar_lineas_sln(extraccion.lineas)
+        if error_lineas:
+            return {"error": error_lineas}
 
         # Guardar en base de datos
         aportante_data = extraccion.aportante
@@ -142,7 +189,7 @@ async def cargar_pdf(
             
         # Guardar trabajadores, vinculos y lineas de nomina
         import re
-        for line in extraccion.lineas:
+        for line in lineas_planilla:
             # Asegurar que el número de documento solo tenga números (limpiar PT, espacios, etc)
             doc_limpio = line.numero_documento
             if doc_limpio:

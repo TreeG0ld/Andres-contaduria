@@ -66,13 +66,25 @@ def exportar_nomina(db: Session, carga_id: int, period: date, mapeos: list[Mapeo
             for v in valores
         }
         
-        for map_row in mapeos_ordenados:
+        # Novedad SLN: la fila SLN solo aporta la pensión del PDF (sin fórmulas), en el mismo consecutivo
+        # del trabajador: cuentas de aporte_pension (72056702 débito y 25700502 crédito).
+        crudas = linea.nov_crudas if isinstance(linea.nov_crudas, dict) else {}
+        solo_sln = bool(crudas.get("solo_sln"))
+        sln_pension = float(crudas.get("sln_pension", 0) or 0)
+
+        filas_a_emitir = []  # (fila del mapeo, monto SLN o None para usar el valor calculado)
+        if not solo_sln:
+            filas_a_emitir += [(m, None) for m in mapeos_ordenados]
+        if sln_pension > 0:
+            filas_a_emitir += [(m, sln_pension) for m in mapeos_ordenados if m.codigo_calculo == "aporte_pension"]
+
+        for map_row, monto_sln in filas_a_emitir:
             concept = map_row.codigo_calculo
             acc_tpl = map_row.columna_destino
             side = map_row.formato
             desc = map_row.relleno
-            
-            amount = vals_dict.get(concept, 0.0)
+
+            amount = vals_dict.get(concept, 0.0) if monto_sln is None else monto_sln
             
             # Resolver cuenta contable
             account_code = acc_tpl

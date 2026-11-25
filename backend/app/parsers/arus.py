@@ -138,6 +138,10 @@ class ARUSParser(ParserBase):
             
             # Construir mapa de nombres limpios desde las tablas del documento
             nombres_map = {}
+            # Filas con novedad SLN: en la tabla del PDF la columna SLN es la posición 14
+            # (ING=4, RET=5, ..., SLN=14). Se guarda, por documento, el orden de sus filas.
+            sln_por_doc = {}
+            contador_doc = {}
             for page in pdf.pages:
                 for table in page.extract_tables():
                     if len(table) > 2:
@@ -146,6 +150,8 @@ class ARUSParser(ParserBase):
                                 doc_parts = str(row[0]).strip().split()
                                 if doc_parts and any(tipo in doc_parts[0] for tipo in ['CC', 'CE', 'NIT', 'TI', 'PA', 'RC', 'PT']):
                                     doc_num = doc_parts[1].strip() if len(doc_parts) > 1 else doc_parts[0].strip()
+                                    if len(row) >= 30 and doc_num.isdigit():
+                                        sln_por_doc.setdefault(doc_num, []).append(str(row[14] or "").strip().upper() == "X")
                                     clean_name = " ".join(str(row[1]).split()).strip()
                                     if clean_name:
                                         nombres_map[doc_num] = clean_name
@@ -171,7 +177,13 @@ class ARUSParser(ParserBase):
                         if len(moneys) >= 13:
                             tipo_doc_emp = matches[i].group(1).strip()
                             num_doc_emp = matches[i].group(2).strip()
-                            
+
+                            # ¿Esta fila tiene la novedad SLN? (n-ésima aparición de este documento)
+                            orden_fila = contador_doc.get(num_doc_emp, 0)
+                            contador_doc[num_doc_emp] = orden_fila + 1
+                            flags_sln = sln_por_doc.get(num_doc_emp, [])
+                            es_sln = flags_sln[orden_fila] if orden_fila < len(flags_sln) else False
+
                             # Extraer Tipo, Subtipo, Novedades y Días
                             match_datos = re.search(r"(\d{2})\s+(\d{2}|[A-Z0-9]+)([\sX0]*?)(\d{1,2})[\s]*(\d{1,2})[\s]*(\d{1,2})[\s]*(\d{1,2})\s*\(", block)
                             
@@ -181,8 +193,9 @@ class ARUSParser(ParserBase):
                                 
                                 novedades_str = match_datos.group(3)
                                 xs = [x for x in novedades_str.split() if x == 'X']
-                                has_ing = len(xs) > 0
-                                has_ret = len(xs) > 1
+                                n_xs = len(xs) - (1 if es_sln else 0)  # la "X" de SLN no es ingreso ni retiro
+                                has_ing = n_xs > 0
+                                has_ret = n_xs > 1
                                 
                                 d_afp, d_eps, d_arl, d_ccf = map(int, match_datos.groups()[3:7])
                             else:
@@ -240,6 +253,10 @@ class ARUSParser(ParserBase):
                                 nombre_emp = name_match.group(1).strip() if name_match else "TRABAJADOR DESCONOCIDO"
                             
                             crudas = {}
+                            if es_sln:
+                                # Línea con SLN: solo cuenta la pensión que trae el PDF (sin fórmulas)
+                                crudas["sln"] = True
+                                crudas["aporte_pension"] = float(ap_pen)
                             novedades = Novedades(ing=has_ing, ret=has_ret, crudas=crudas)
                             
                             # Calculate Base Salary directly from IBC Salud (General Base)

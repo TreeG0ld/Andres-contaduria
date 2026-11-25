@@ -62,6 +62,10 @@ class MotorFormulas:
                 if not aplica:
                     valor = 0
                     
+            # Trabajador con solo filas SLN: sin fórmulas (el generador toma la pensión del PDF)
+            if linea.nov_crudas and isinstance(linea.nov_crudas, dict) and linea.nov_crudas.get("solo_sln"):
+                valor = 0
+
             # Truncar los decimales (eliminar la parte decimal del final)
             valor_truncado = int(valor) if valor else 0
             
